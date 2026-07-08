@@ -1,0 +1,9 @@
+{
+  "name": "craftverse-mc-server",
+  "version": "1.0.0",
+  "description": "CraftVerse MC Server Website",
+  "scripts": {
+    "build": "cd backend && npm install",
+    "start": "cd backend && node server.js"
+  }
+}

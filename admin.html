@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CraftVerse · 管理后台</title>
+  <link rel="icon" type="image/png" href="assets/images/favicon.png">
+  <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
+  <script src="settings.js"></script>
+  <script src="api.js"></script>
+</head>
+<body class="admin-body">
+
+  <!-- ======== 管理员密码验证 ======== -->
+  <div class="password-overlay" id="passwordOverlay">
+    <div class="password-box">
+      <h2>🔐 管理员验证</h2>
+      <p>请输入管理员密码以访问后台管理面板</p>
+      <div class="form-group">
+        <input type="password" class="form-input" id="adminPassword" placeholder="输入管理员密码" style="text-align:center;font-family:var(--font-mono);font-size:18px;letter-spacing:4px;">
+      </div>
+      <div class="form-error" id="passwordError" style="display:none;margin-bottom:12px;"></div>
+      <button class="form-btn" id="passwordSubmit">验证身份</button>
+      <div class="form-footer" style="margin-top:16px;">
+        <a href="index.html">← 返回首页</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== 后台主内容 ======== -->
+  <div class="admin-layout hidden" id="adminContent">
+
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-logo">§ CRAFTVERSE</div>
+      <div class="admin-nav-item active" data-page="page-dashboard">
+        <span>📊</span> 控制面板
+      </div>
+      <div class="admin-nav-item" data-page="page-bans">
+        <span>🔨</span> 封禁管理
+      </div>
+      <div class="admin-nav-item" data-page="page-users">
+        <span>👥</span> 用户管理
+      </div>
+      <div class="admin-nav-item" data-page="page-settings">
+        <span>🌐</span> 网站设置
+      </div>
+      <div class="admin-nav-item" data-page="page-email">
+        <span>📧</span> 邮箱配置
+      </div>
+      <div class="admin-nav-item" data-page="page-api">
+        <span>🔌</span> API 配置
+      </div>
+      <div class="admin-nav-item" data-page="page-server">
+        <span>⚙️</span> 服务器信息
+      </div>
+      <div class="admin-nav-item" data-page="page-content">
+        <span>📄</span> 内容管理
+      </div>
+      <div class="admin-nav-item" data-page="page-config">
+        <span>📝</span> 配置查看
+      </div>
+
+      <div style="flex:1;"></div>
+
+      <div class="admin-nav-item" onclick="adminLogout()">
+        <span>🚪</span> 退出登录
+      </div>
+      <div class="admin-nav-item" onclick="location.href='index.html'">
+        <span>🏠</span> 返回官网
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+
+      <!-- ====== Dashboard ====== -->
+      <div class="admin-page" id="page-dashboard">
+        <div class="admin-header">
+          <h1 class="admin-title">📊 控制面板</h1>
+          <span style="font-size:14px;color:var(--text-secondary);">欢迎回来，管理员</span>
+        </div>
+        <div class="admin-stat-grid">
+          <div class="admin-stat-card">
+            <div class="admin-stat-value" id="statTotalUsers">0</div>
+            <div class="admin-stat-label">注册用户</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-value" id="statTotalBans">0</div>
+            <div class="admin-stat-label">总封禁记录</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-value" id="statActiveBans">0</div>
+            <div class="admin-stat-label">当前封禁中</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-value" id="statOnline">0</div>
+            <div class="admin-stat-label">当前在线</div>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-title">⚡ 快捷操作</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="document.querySelector('[data-page=page-bans]').click()">添加封禁</button>
+            <button class="btn btn-secondary" onclick="document.querySelector('[data-page=page-settings]').click()">网站设置</button>
+            <button class="btn btn-secondary" onclick="document.querySelector('[data-page=page-email]').click()">邮箱配置</button>
+            <button class="btn btn-outline" onclick="location.href='index.html'">查看官网</button>
+            <button class="btn btn-danger" onclick="clearAllData()">清除所有数据</button>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-title">💡 后台使用说明</div>
+          <div style="font-size:14px;color:var(--text-secondary);line-height:1.8;">
+            <p><strong style="color:var(--text-primary);">网站设置：</strong>在「网站设置」中可修改服务器名称、IP、在线人数等，修改后自动保存。管理员密码也可在此修改。</p>
+            <p><strong style="color:var(--text-primary);">邮箱配置：</strong>在「邮箱配置」中填写 QQ 邮箱和 SMTP 授权码，用于发送注册验证码。</p>
+            <p><strong style="color:var(--text-primary);">API 配置：</strong>在「API 配置」中可切换本地/远程模式，配置 endpoint 和 apiKey。</p>
+            <p><strong style="color:var(--text-primary);">管理员密码：</strong>当前密码为 π 的精确值（3.141592653589793238462643383279501），可在「网站设置」中修改。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== Ban Management ====== -->
+      <div class="admin-page" id="page-bans" style="display:none;">
+        <div class="admin-header">
+          <h1 class="admin-title">🔨 封禁管理</h1>
+        </div>
+
+        <!-- Add Ban Form -->
+        <div class="admin-card">
+          <div class="admin-card-title">添加封禁</div>
+          <form id="addBanForm">
+            <div class="admin-form-row">
+              <div class="form-group">
+                <label class="form-label">玩家名</label>
+                <input type="text" class="form-input" id="banPlayer" placeholder="输入玩家游戏名" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">封禁原因</label>
+                <input type="text" class="form-input" id="banReason" placeholder="封禁原因" required>
+              </div>
+              <button type="submit" class="btn btn-primary">执行封禁</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Ban List Table -->
+        <div class="admin-card">
+          <div class="admin-card-title">封禁列表</div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>玩家名</th>
+                  <th>封禁原因</th>
+                  <th>封禁日期</th>
+                  <th>状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="adminBanTableBody">
+                <tr><td colspan="5" style="text-align:center;color:#8892B0;padding:40px;">加载中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- API 说明 -->
+        <div class="admin-card">
+          <div class="admin-card-title">🔌 API 接口说明</div>
+          <div style="font-size:14px;color:var(--text-secondary);line-height:1.8;">
+            <p style="margin-bottom:8px;">配置 <code style="background:rgba(255,255,255,0.1);padding:2px 5px;border-radius:3px;">banApi.mode = 'remote'</code> 后，可通过以下 API 管理封禁列表：</p>
+            <div style="background:#0A0E1A;border-radius:6px;padding:16px;margin-bottom:8px;">
+              <p><strong style="color:var(--accent-green);">GET</strong> <span style="color:var(--text-primary);">/api/bans</span> <span style="color:var(--text-secondary);">— 获取封禁列表</span></p>
+              <p><strong style="color:var(--accent-gold);">POST</strong> <span style="color:var(--text-primary);">/api/bans</span> <span style="color:var(--text-secondary);">— 添加封禁</span></p>
+              <p><strong style="color:var(--accent-red);">DELETE</strong> <span style="color:var(--text-primary);">/api/bans/:id</span> <span style="color:var(--text-secondary);">— 删除封禁</span></p>
+              <p><strong style="color:#6C5CE7;">PATCH</strong> <span style="color:var(--text-primary);">/api/bans/:id/unban</span> <span style="color:var(--text-secondary);">— 解封玩家</span></p>
+            </div>
+            <p>所有 API 请求需在 Header 中携带 <code style="background:rgba(255,255,255,0.1);padding:2px 5px;border-radius:3px;">Authorization: Bearer {apiKey}</code> 进行鉴权。</p>
+            <p style="margin-top:8px;color:var(--accent-gold);">★ 管理员密码用于后台登录鉴权，API 密钥用于接口鉴权，两者在 config.js 中独立配置。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== User Management ====== -->
+      <div class="admin-page" id="page-users" style="display:none;">
+        <div class="admin-header">
+          <h1 class="admin-title">👥 用户管理</h1>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-title">注册用户列表</div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>用户名</th>
+                  <th>邮箱</th>
+                  <th>注册时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <tr><td colspan="4" style="text-align:center;color:#8892B0;padding:40px;">加载中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== 网站设置 ====== -->
+      <div class="admin-page" id="page-settings" style="display:none;">
+        <div class="admin-header">
+          <h1 class="admin-title">🌐 网站设置</h1>
+          <span style="font-size:13px;color:var(--text-secondary);">修改后自动保存到浏览器，刷新官网即可看到变化</span>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-title">服务器基本信息</div>
+          <div class="admin-form-row">
+            <div class="form-group">
+              <label class="form-label">服务器名称</label>
+              <input type="text" class="form-input" id="set_serverName" placeholder="如 § CRAFTVERSE">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Minecraft 版本</label>
+              <input type="text" class="form-input" id="set_serverVersion" placeholder="1.21">
+            </div>
+          </div>
+          <div class="admin-form-row">
+            <div class="form-group">
+              <label class="form-label">标语</label>
+              <input type="text" class="form-input" id="set_serverTagline" placeholder="一个全新的 Minecraft 生存体验服务器">
+            </div>
+            <div class="form-group">
+              <label class="form-label">描述</label>
+              <input type="text" class="form-input" id="set_serverDesc" placeholder="纯净生存 + 特色模组">
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-title" style="margin-bottom:12px;">🌐 服务器地址（多地址支持）</div>
+          <div id="addressesEditor" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+            <!-- 由 admin.js 动态渲染 -->
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-sm btn-outline" onclick="addAddressRow()">+ 添加地址</button>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-title">服务器统计数据</div>
+          <div class="admin-form-row">
+            <div class="form-group">
+              <label class="form-label">当前在线人数</label>
+              <input type="number" class="form-input" id="set_playerOnline" placeholder="128">
+            </div>
+            <div class="form-group">
+              <label class="form-label">累计注册玩家</label>
+              <input type="number" class="form-input" id="set_totalPlayers" placeholder="1284">
+            </div>
+          </div>
+          <div class="admin-form-row">
+            <div class="form-group">
+              <label class="form-label">月平均在线率</label>
+              <input type="text" class="form-input" id="set_uptimeRate" placeholder="99.9%">
+            </div>
+            <div class="form-group">
+              <label class="form-label">稳定运行天数</label>
+              <input type="number" class="form-input" id="set_stableDays" placeholder="365">
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-title">🔑 管理员密码</div>
+          <div class="admin-form-row">
+            <div class="form-group">
+              <label class="form-label">新密码（留空不修改）</label>
+              <input type="password" class="form-input" id="set_adminPassword" placeholder="输入新管理员密码">
+            </div>
+          </div>
+          <div id="adminPasswordStatus" style="display:none;color:var(--accent-gold);font-size:14px;margin-bottom:12px;"></div>
+        </div>
+
+        <div style="display:flex;gap:12px;">
+          <button class="btn btn-primary btn-lg" id="saveSettingsBtn">💾 保存网站设置</button>
+          <button class="btn btn-secondary btn-lg" onclick="resetSettings()">🔄 恢复默认</button>
+        </div>
+      </div>
+
+      <!-- ====== 邮箱配置 ====== -->
+      <div class="admin-page" id="page-email" style="display:none;">
+        <div class="admin-header">
+          <h1 class="admin-title">📧 邮箱配置</h1>
+          <span style="font-size:13px;color:var(--text-secondary);">配置 QQ 邮箱 SMTP 用于发送注册验证码</span>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-title">QQ 邮箱 SMTP 设置</div>
+          <div class="admin-form-row">
+            <div class="form-group">
+              <label class="form-label">SMTP 服务器</label>
+              <input type="text" class="form-input" id="set_smtpHost" placeholder="smtp.qq.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label">端口</label>
+              <input type="number" class="form-input" id="set_smtpPort" placeholder="465">
+            </div>
+          </div>
+          <div class="admin-form-row">
+            <div class="form-group">
+              <label class="form-label">QQ 邮箱账号</label>
+              <input type="text" class="form-input" id="set_smtpUser" placeholder="your_email@qq.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label">SMTP 授权码 ★</label>
+              <input type="password" class="form-input" id="set_smtpPass" placeholder="输入 QQ 邮箱 SMTP 授权码">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">验证码有效期（秒）</label>
+            <input type="number" class="form-input" id="set_codeExpire" placeholder="300">
+          </div>
+          <div id="emailStatus" style="display:none;color:var(--accent-green);font-size:14px;margin-bottom:12px;"></div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-title">📖 如何获取 SMTP 授权码？</div>
+          <div style="font-size:14px;color:var(--text-secondary);line-height:1.8;">
+            <p>1️⃣ 登录 <a href="https://mail.qq.com" target="_blank" style="color:var(--accent-green);">QQ 邮箱</a> → 设置 → 账户</p>
+            <p>2️⃣ 找到「POP3/IMAP/SMTP 服务」→ 开启 SMTP 服务</p>
+            <p>3️⃣ 点击「生成授权码」→ 按提示发送短信后即可获取</p>
+            <p>4️⃣ 将生成的授权码填入上方的「SMTP 授权码」字段</p>
+            <p style="margin-top:12px;color:var(--accent-gold);">⚠️ 授权码与 QQ 邮箱密码不同，请勿混淆！授权码可在 QQ 邮箱设置中随时重新生成。</p>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" id="saveEmailBtn">💾 保存邮箱配置</button>
+      </div>
+
+      <!-- ====== API 配置 ====== -->
+      <div class="admin-page" id="page-api" style="display:none;">
+        <div class="admin-header">
+          <h1 class="admin-title">🔌 API 配置</h1>
+          <span style="font-size:13px;color:var(--text-secondary);">封禁列表 API 远程管理配置</span>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-title">API 模式</div>
+          <div style="display:flex;gap:24px;margin-bottom:16px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--text-primary);">
+              <input type="radio" name="apiMode" value="local" checked> 本地存储（开箱即用）
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--text-primary);">
+              <input type="radio" name="apiMode" value="remote"> 远程 API
+            </label>
+          </div>
+          <div class="admin-form-row">
+            <div class="form-group">
+              <label class="form-label">API 端点 URL</label>
+              <input type="text" class="form-input" id="set_apiEndpoint" placeholder="https://your-api.com/api/bans">
+            </div>
+            <div class="form-group">
+              <label class="form-label">API 密钥</label>
+              <input type="password" class="form-input" id="set_apiKey" placeholder="输入 API 密钥">
+            </div>
+          </div>
+          <div id="apiStatus" style="display:none;color:var(--accent-green);font-size:14px;margin-bottom:12px;"></div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-title">API 接口文档</div>
+          <div style="font-size:14px;color:var(--text-secondary);line-height:1.8;">
+            <p>所有 API 请求需在 Header 中携带 <code style="background:rgba(255,255,255,0.1);padding:2px 5px;border-radius:3px;">Authorization: Bearer {apiKey}</code></p>
+            <div style="background:#0A0E1A;border-radius:6px;padding:16px;margin-top:8px;">
+              <p><strong style="color:var(--accent-green);">GET</strong> <span style="color:var(--text-primary);">/api/bans</span> <span style="color:var(--text-secondary);">— 获取封禁列表</span></p>
+              <p><strong style="color:var(--accent-gold);">POST</strong> <span style="color:var(--text-primary);">/api/bans</span> <span style="color:var(--text-secondary);">— 添加封禁</span></p>
+              <p><strong style="color:var(--accent-red);">DELETE</strong> <span style="color:var(--text-primary);">/api/bans/:id</span> <span style="color:var(--text-secondary);">— 删除封禁</span></p>
+              <p><strong style="color:#6C5CE7;">PATCH</strong> <span style="color:var(--text-primary);">/api/bans/:id/unban</span> <span style="color:var(--text-secondary);">— 解封玩家</span></p>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" id="saveApiBtn">💾 保存 API 配置</button>
+      </div>
+
+      <!-- ====== 内容管理 ====== -->
+      <div class="admin-page" id="page-content" style="display:none;">
+        <div class="admin-header">
+          <h1 class="admin-title">📄 内容管理</h1>
+          <span style="font-size:13px;color:var(--text-secondary);">编辑网站显示的所有内容，修改后自动保存</span>
+        </div>
+
+        <div id="contentEditorArea"></div>
+
+        <div style="display:flex;gap:12px;margin-top:16px;">
+          <button class="btn btn-primary btn-lg" onclick="saveAllContent()">💾 全部保存</button>
+          <span style="font-size:13px;color:var(--text-secondary);align-self:center;">修改后点击保存，刷新首页即可看到变化</span>
+        </div>
+      </div>
+
+      <!-- ====== Config Viewer ====== -->
+      <div class="admin-page" id="page-config" style="display:none;">
+        <div class="admin-header">
+          <h1 class="admin-title">📝 配置总览</h1>
+          <button class="btn btn-secondary" onclick="location.href='config.js'">打开 config.js</button>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-title">当前配置</div>
+          <div id="configInfo"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

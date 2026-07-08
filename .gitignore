@@ -1,0 +1,5 @@
+backend/node_modules/
+backend/.env
+backend/data/
+.workbuddy/
+node_modules/
