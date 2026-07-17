@@ -8,7 +8,17 @@
   <link rel="stylesheet" href="style.css">
   <script src="config.js"></script>
   <script src="settings.js"></script>
+  <script src="supabase-config.js"></script>
   <script src="api.js"></script>
+  <script>
+    (function(){
+      var saved = localStorage.getItem('mc_theme');
+      if (saved) document.documentElement.setAttribute('data-theme', saved);
+      else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches)
+        document.documentElement.setAttribute('data-theme', 'light');
+      else document.documentElement.setAttribute('data-theme', 'dark');
+    })();
+  </script>
 </head>
 <body class="admin-body">
 
@@ -399,6 +409,20 @@
         <div style="display:flex;gap:12px;margin-top:16px;">
           <button class="btn btn-primary btn-lg" onclick="saveAllContent()">💾 全部保存</button>
           <span style="font-size:13px;color:var(--text-secondary);align-self:center;">修改后点击保存，刷新首页即可看到变化</span>
+        </div>
+      </div>
+
+      <!-- ====== 服务器信息 ====== -->
+      <div class="admin-page" id="page-server" style="display:none;">
+        <div class="admin-header">
+          <h1 class="admin-title">⚙️ 服务器信息</h1>
+          <span style="font-size:13px;color:var(--text-secondary);">当前服务器运行状态与配置</span>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-title">服务器详情</div>
+          <div id="serverInfo">
+            <div style="text-align:center;color:var(--text-secondary);padding:40px;">加载中...</div>
+          </div>
         </div>
       </div>
 

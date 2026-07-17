@@ -7,6 +7,14 @@
   <link rel="icon" type="image/png" href="assets/images/favicon.png">
   <link rel="stylesheet" href="style.css">
   <script>
+    // 主题初始化（内联，避免闪烁）
+    (function(){
+      var saved = localStorage.getItem('mc_theme');
+      if (saved) document.documentElement.setAttribute('data-theme', saved);
+      else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches)
+        document.documentElement.setAttribute('data-theme', 'light');
+      else document.documentElement.setAttribute('data-theme', 'dark');
+    })();
     // 全局错误捕获
     window.onerror = function(msg, url, line) {
       var d = document.getElementById('jsError');
@@ -35,11 +43,17 @@
         <a href="#announcements">公告</a>
         <a href="#stats">数据</a>
         <a href="#timeline">历程</a>
+        <a href="#changelog">日志</a>
         <a href="#gallery">图库</a>
         <a href="#faq">FAQ</a>
+        <a href="#comments">留言</a>
         <a href="#team">团队</a>
       </nav>
       <div class="header-actions">
+        <button class="theme-toggle" id="themeToggle" title="切换深色/浅色模式" aria-label="切换主题">
+          <span class="icon-sun">☀️</span>
+          <span class="icon-moon">🌙</span>
+        </button>
         <button class="btn btn-secondary" id="loginBtn">登录</button>
         <button class="btn btn-primary" id="registerBtn">注册</button>
       </div>
@@ -48,6 +62,20 @@
       </div>
     </div>
   </header>
+
+  <!-- ======== 移动端导航 ======== -->
+  <nav class="mobile-nav" id="mobileNav">
+    <a href="#hero" class="active">首页</a>
+    <a href="#modes">游戏</a>
+    <a href="#announcements">公告</a>
+    <a href="#stats">数据</a>
+    <a href="#timeline">历程</a>
+    <a href="#changelog">日志</a>
+    <a href="#gallery">图库</a>
+    <a href="#faq">FAQ</a>
+    <a href="#comments">留言</a>
+    <a href="#team">团队</a>
+  </nav>
 
   <!-- ======== Hero ======== -->
   <section class="hero" id="hero">
@@ -379,6 +407,36 @@
     </div>
   </section>
 
+  <!-- ======== 更新日志 ======== -->
+  <section class="section section-alt" id="changelog">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">§ 更新日志</span>
+        <h2 class="section-title">版本更新记录</h2>
+        <p class="section-desc">持续迭代，不断优化游戏体验</p>
+      </div>
+      <div class="changelog-grid" id="changelogGrid"></div>
+    </div>
+  </section>
+
+  <!-- ======== 玩家评论 ======== -->
+  <section class="section" id="comments">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">§ 玩家留言</span>
+        <h2 class="section-title">社区交流</h2>
+        <p class="section-desc">留下你的想法和建议，与社区互动</p>
+      </div>
+      <div class="comment-section">
+        <div class="comment-input-area">
+          <textarea id="commentInput" placeholder="说点什么吧...（最多 500 字）" maxlength="500"></textarea>
+          <button class="btn btn-primary" id="commentSubmit" style="align-self:flex-start;white-space:nowrap;">发表评论</button>
+        </div>
+        <div class="comment-list" id="commentList"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ======== Rules & Ban List ======== -->
   <section class="section" id="rules">
     <div class="container">
@@ -512,6 +570,8 @@
           <div class="footer-links">
             <a href="#announcements">最新公告</a>
             <a href="#gallery">精彩图库</a>
+            <a href="#changelog">更新日志</a>
+            <a href="#comments">玩家留言</a>
             <a href="#team">管理团队</a>
             <a href="admin.html">管理后台</a>
           </div>
@@ -544,6 +604,9 @@
       <div id="authFormContainer"></div>
     </div>
   </div>
+
+  <!-- ======== 滚动到顶部 ======== -->
+  <button class="scroll-top-btn" title="回到顶部" aria-label="回到顶部">↑</button>
 
   <script src="script.js"></script>
 </body>

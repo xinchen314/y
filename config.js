@@ -84,6 +84,26 @@ const CONFIG = {
       title: '反作弊系统',
       desc: '强大的反作弊保护，公平竞技环境，24 小时自动监测异常行为。',
     },
+    {
+      icon: '🌐',
+      title: '跨版本兼容',
+      desc: '支持 Java 版与基岩版跨平台联机，不同设备玩家畅快共游同一世界。',
+    },
+    {
+      icon: '💰',
+      title: '经济系统',
+      desc: '完善的玩家经济体系，支持商店交易、拍卖行、玩家间转账等功能。',
+    },
+    {
+      icon: '🏠',
+      title: '领地保护',
+      desc: '自助领地申请与保护系统，守护你的家园不被恶意破坏。',
+    },
+    {
+      icon: '🎨',
+      title: '自定义纹理',
+      desc: '支持自定义材质包与皮肤，打造独一无二的游戏视觉体验。',
+    },
   ],
 
   // -------- 服务器公告 --------
@@ -194,6 +214,50 @@ const CONFIG = {
       desc: '空岛战争、饥饿游戏、跑酷、掘一死战等多种小游戏随时切换，放松心情的最佳选择。',
       players: 28,
       rating: 4.7,
+    },
+  ],
+
+  // -------- 版本更新日志 --------
+  changelog: [
+    {
+      version: '1.21.0',
+      date: '2026-07-01',
+      changes: [
+        { type: 'added', text: '新增试炼密室副本内容' },
+        { type: 'added', text: '新增微风人生物及掉落物' },
+        { type: 'added', text: '新增暑期建筑大赛活动系统' },
+        { type: 'changed', text: '优化服务器 TPS 性能，减少延迟' },
+        { type: 'fixed', text: '修复部分玩家领地保护失效问题' },
+      ],
+    },
+    {
+      version: '1.20.5',
+      date: '2026-06-15',
+      changes: [
+        { type: 'added', text: '新增远古遗迹团队副本' },
+        { type: 'added', text: '新增反作弊系统 v2.0' },
+        { type: 'changed', text: '经济系统平衡性调整' },
+        { type: 'removed', text: '移除过期节日活动道具' },
+      ],
+    },
+    {
+      version: '1.20.0',
+      date: '2026-05-20',
+      changes: [
+        { type: 'added', text: '新增小游戏大厅系统' },
+        { type: 'added', text: '新增空岛战争模式' },
+        { type: 'added', text: '新增玩家称号系统' },
+        { type: 'fixed', text: '修复登录时偶尔卡顿问题' },
+      ],
+    },
+    {
+      version: '1.0.0',
+      date: '2026-03-01',
+      changes: [
+        { type: 'added', text: 'CraftVerse 服务器正式开服' },
+        { type: 'added', text: '初始生存世界开放' },
+        { type: 'added', text: '基础经济与领地系统上线' },
+      ],
     },
   ],
 };

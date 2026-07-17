@@ -392,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
-  function toggleCard(headerEl) {
+  window.toggleCard = function(headerEl) {
     const body = headerEl.parentElement.querySelector('.card-body');
     if (body) body.style.display = body.style.display === 'none' ? 'block' : 'none';
   }

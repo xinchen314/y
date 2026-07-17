@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // -------- 服务器基本信息 --------
   function renderServerInfo() {
-    const srv = CONFIG.server;
+    const srv = getCfg('server');
     // 标题
     document.querySelectorAll('[data-server-name]').forEach(el => {
       el.textContent = srv.name;
@@ -71,6 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (key === 'uptime') el.textContent = srv.uptimeRate || '99.9%';
       else if (key === 'days') el.textContent = srv.stableDays || '0';
     });
+    // 页面标题
+    if (srv.name) document.title = srv.name + ' 服务器';
   }
 
   // -------- 游戏模式 --------
@@ -533,15 +535,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // -------- 封禁名单加载 --------
   function loadBanList() {
-    const container = document.getElementById('banList');
-    if (!container) return;
+    const tbody = document.getElementById('banTableBody');
+    if (!tbody) return;
     const bans = JSON.parse(localStorage.getItem('mc_bans') || '[]');
     if (bans.length === 0) {
-      container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-secondary);">暂无封禁记录</div>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-secondary);">暂无封禁记录</td></tr>';
       return;
     }
-    container.innerHTML = bans.map(b =>
-      '<div class="ban-item"><span class="ban-player">' + b.player + '</span><span class="ban-reason">' + b.reason + '</span><span class="ban-date">' + b.date + '</span><span class="ban-status" style="color:' + (b.status === '封禁中' ? 'var(--accent-red)' : 'var(--accent-green)') + ';">' + b.status + '</span></div>'
+    tbody.innerHTML = bans.map(b =>
+      '<tr>' +
+        '<td>' + (b.player || '--') + '</td>' +
+        '<td>' + (b.reason || '--') + '</td>' +
+        '<td>' + (b.date || '--') + '</td>' +
+        '<td><span class="' + (b.status === '封禁中' ? 'status-banned' : 'status-unbanned') + '">' + (b.status || '封禁中') + '</span></td>' +
+      '</tr>'
     ).join('');
   }
   loadBanList();
@@ -649,6 +656,150 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // =========================================================
+  // 🌓 主题切换（深色/浅色/跟随系统）
+  // =========================================================
+  function initThemeToggle() {
+    const saved = localStorage.getItem('mc_theme');
+    if (saved) {
+      document.documentElement.setAttribute('data-theme', saved);
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+
+    // 监听系统主题变化（仅当用户未手动选择时）
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('mc_theme')) {
+          document.documentElement.setAttribute('data-theme', e.matches ? 'light' : 'dark');
+        }
+      });
+    }
+
+    // 绑定切换按钮
+    const toggleBtn = document.getElementById('themeToggle');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('mc_theme', next);
+        showToast(next === 'light' ? '已切换至浅色模式' : '已切换至深色模式', 'info');
+      });
+    }
+  }
+
+  // =========================================================
+  // 📱 移动端菜单
+  // =========================================================
+  function initMobileMenu() {
+    const menuBtn = document.querySelector('.mobile-menu-btn');
+    const mobileNav = document.querySelector('.mobile-nav');
+    if (!menuBtn) return;
+
+    menuBtn.addEventListener('click', () => {
+      menuBtn.classList.toggle('active');
+      if (mobileNav) mobileNav.classList.toggle('active');
+    });
+
+    // 点击导航链接后关闭菜单
+    if (mobileNav) {
+      mobileNav.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          menuBtn.classList.remove('active');
+          mobileNav.classList.remove('active');
+          const target = document.querySelector(link.getAttribute('href'));
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+    }
+  }
+
+  // =========================================================
+  // ⬆️ 滚动到顶部按钮
+  // =========================================================
+  function initScrollTop() {
+    const btn = document.querySelector('.scroll-top-btn');
+    if (!btn) return;
+    window.addEventListener('scroll', () => {
+      btn.classList.toggle('visible', window.scrollY > 500);
+    });
+    btn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  // =========================================================
+  // 💬 玩家评论区
+  // =========================================================
+  function initComments() {
+    const textarea = document.getElementById('commentInput');
+    const submitBtn = document.getElementById('commentSubmit');
+    const listEl = document.getElementById('commentList');
+    if (!textarea || !submitBtn || !listEl) return;
+
+    function renderComments() {
+      const comments = JSON.parse(localStorage.getItem('mc_comments') || '[]');
+      if (comments.length === 0) {
+        listEl.innerHTML = '<div class="comment-empty">还没有评论，快来抢沙发吧！</div>';
+        return;
+      }
+      listEl.innerHTML = comments.map(c =>
+        '<div class="comment-item">' +
+          '<div class="comment-header">' +
+            '<div class="comment-avatar">' + (c.name || 'U').charAt(0).toUpperCase() + '</div>' +
+            '<div>' +
+              '<div class="comment-name">' + c.name + '</div>' +
+              '<div class="comment-time">' + c.time + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="comment-text">' + c.text + '</div>' +
+        '</div>'
+      ).join('');
+    }
+
+    submitBtn.addEventListener('click', () => {
+      const text = textarea.value.trim();
+      if (!text) { showToast('请输入评论内容', 'error'); return; }
+      if (text.length > 500) { showToast('评论最多 500 字', 'error'); return; }
+      const user = JSON.parse(localStorage.getItem('mc_current_user') || 'null');
+      const comments = JSON.parse(localStorage.getItem('mc_comments') || '[]');
+      comments.unshift({
+        name: user ? (user.username || user.email) : '游客',
+        text: text.replace(/</g, '&lt;').replace(/>/g, '&gt;'),
+        time: new Date().toLocaleString('zh-CN'),
+      });
+      localStorage.setItem('mc_comments', JSON.stringify(comments));
+      textarea.value = '';
+      renderComments();
+      showToast('评论发布成功！', 'success');
+    });
+
+    renderComments();
+  }
+
+  // =========================================================
+  // 📋 版本更新日志渲染
+  // =========================================================
+  function renderChangelog() {
+    const container = document.getElementById('changelogGrid');
+    if (!container) return;
+    const items = CONFIG.changelog || [];
+    if (!items.length) return;
+    container.innerHTML = items.map(c =>
+      '<div class="changelog-item">' +
+        '<div class="changelog-version">v' + c.version + '</div>' +
+        '<div class="changelog-date">' + c.date + '</div>' +
+        '<ul class="changelog-list">' +
+          (c.changes || []).map(ch => '<li class="' + (ch.type || '') + '">' + ch.text + '</li>').join('') +
+        '</ul>' +
+      '</div>'
+    ).join('');
+  }
+
+  // =========================================================
   // 🚀 初始化所有内容渲染 + 高级效果
   // =========================================================
   // 首次渲染所有内容
@@ -663,9 +814,14 @@ document.addEventListener('DOMContentLoaded', () => {
   renderFAQ();
   renderRules();
   renderTeam();
+  renderChangelog();
 
   // 延迟启动视觉效果（不阻塞 DOM 渲染）
   setTimeout(() => {
+    initThemeToggle();
+    initMobileMenu();
+    initScrollTop();
+    initComments();
     initParticles();
     initScrollReveal();
     initFAQ();
