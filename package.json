@@ -1,0 +1,10 @@
+{
+  "name": "eternal-forest",
+  "version": "1.0.0",
+  "private": true,
+  "description": "永恒森林 MC 服务器官网 — 纯静态站点",
+  "scripts": {
+    "build": "echo '纯静态站点，无需构建'",
+    "start": "echo '使用 http-server 本地预览: npx http-server -p 8973'"
+  }
+}
