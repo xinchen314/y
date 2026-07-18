@@ -1,5 +1,5 @@
 /* ============================================================
-   CraftVerse MC 服务器官网 - 样式表
+   永恒森林 MC 服务器官网 - 样式表
    ============================================================ */
 
 /* -------- Google Fonts -------- */
@@ -2744,3 +2744,1249 @@ input, textarea {
   .changelog-grid { grid-template-columns: 1fr; }
   .comment-input-area { flex-direction: column; }
 }
+
+/* ============================================================
+   📈 阅读进度条
+   ============================================================ */
+.read-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-green-light), var(--accent-gold));
+  z-index: 9999;
+  transition: width 0.1s ease;
+  box-shadow: 0 0 10px rgba(68, 179, 122, 0.5);
+}
+
+/* ============================================================
+   ⌨️ 打字机光标
+   ============================================================ */
+.typewriter-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--accent-green);
+  margin-left: 4px;
+  animation: blink-cursor 0.8s step-end infinite;
+  vertical-align: text-bottom;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ============================================================
+   ⏰ 活动倒计时
+   ============================================================ */
+.countdown-section {
+  padding: 60px 0;
+  background: var(--bg-primary);
+}
+
+.countdown-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.countdown-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(68, 179, 122, 0.15);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.countdown-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-green), var(--accent-gold), var(--accent-green), transparent);
+}
+
+.countdown-card:hover {
+  border-color: rgba(68, 179, 122, 0.35);
+  box-shadow: 0 8px 40px rgba(68, 179, 122, 0.1);
+}
+
+.countdown-card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.countdown-card-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.countdown-timer {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.countdown-unit {
+  text-align: center;
+  min-width: 80px;
+}
+
+.countdown-number {
+  font-family: var(--font-mono);
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--accent-green);
+  line-height: 1;
+  background: linear-gradient(135deg, var(--accent-green-light), var(--accent-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.countdown-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.countdown-cta {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 8px 20px;
+  background: var(--accent-green);
+  color: var(--bg-primary);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.countdown-cta:hover {
+  background: var(--accent-green-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(68, 179, 122, 0.3);
+}
+
+.countdown-expired {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+
+/* ============================================================
+   📊 服务器实时状态卡片
+   ============================================================ */
+.server-status-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(68, 179, 122, 0.15);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  max-width: 600px;
+  margin: 0 auto;
+  transition: all 0.3s ease;
+}
+
+.server-status-card:hover {
+  border-color: rgba(68, 179, 122, 0.3);
+  box-shadow: 0 8px 30px rgba(68, 179, 122, 0.08);
+}
+
+.server-status-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.server-status-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.server-status-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.server-status-info {
+  flex: 1;
+}
+
+.server-status-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.server-status-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.server-status-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.server-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.server-status-badge.online {
+  background: rgba(68, 179, 122, 0.15);
+  color: var(--accent-green);
+  border: 1px solid rgba(68, 179, 122, 0.3);
+}
+
+.server-status-badge.offline {
+  background: rgba(255, 71, 87, 0.15);
+  color: var(--accent-red);
+  border: 1px solid rgba(255, 71, 87, 0.3);
+}
+
+.server-status-badge.loading {
+  background: rgba(255, 215, 0, 0.15);
+  color: var(--accent-gold);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.server-status-badge .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.server-status-badge.online .status-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.server-status-motd {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+  line-height: 1.6;
+  border-left: 3px solid var(--accent-green);
+}
+
+/* 玩家头颅列表 */
+.player-heads-section {
+  margin-top: 20px;
+}
+
+.player-heads-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.player-heads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.player-head {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.player-head img {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.player-head:hover {
+  border-color: var(--accent-green);
+  transform: translateY(-3px) scale(1.1);
+  box-shadow: 0 4px 12px rgba(68, 179, 122, 0.3);
+  z-index: 10;
+}
+
+.player-head-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  border: 1px solid var(--border-color);
+}
+
+.player-head:hover .player-head-tooltip {
+  opacity: 1;
+}
+
+.player-heads-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   🖼️ 图片灯箱 (Lightbox)
+   ============================================================ */
+.lightbox-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 5000;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.lightbox-overlay.active {
+  display: flex;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.lightbox-image {
+  max-width: 90vw;
+  max-height: 85vh;
+  border-radius: var(--radius-md);
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.5);
+  animation: zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.lightbox-caption {
+  position: absolute;
+  bottom: 24px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lightbox-nav:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.lightbox-prev { left: 24px; }
+.lightbox-next { right: 24px; }
+
+/* ============================================================
+   👍 评论点赞
+   ============================================================ */
+.comment-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.comment-like-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.comment-like-btn:hover {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+
+.comment-like-btn.liked {
+  background: rgba(68, 179, 122, 0.1);
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+
+.comment-like-btn .like-icon {
+  font-size: 15px;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.comment-like-btn.liked .like-icon {
+  transform: scale(1.2);
+}
+
+.comment-like-count {
+  font-weight: 600;
+}
+
+.comment-delete-btn {
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.5;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.comment-delete-btn:hover {
+  color: var(--accent-red);
+  opacity: 1;
+}
+
+/* 评论排序标签 */
+.comment-sort-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.comment-sort-tab {
+  padding: 4px 14px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.comment-sort-tab.active {
+  background: rgba(68, 179, 122, 0.1);
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+
+.comment-sort-tab:hover:not(.active) {
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   📱 响应式补充
+   ============================================================ */
+@media (max-width: 768px) {
+  .countdown-unit { min-width: 64px; }
+  .countdown-number { font-size: 28px; }
+  .server-status-header { flex-direction: column; text-align: center; }
+  .lightbox-nav { width: 36px; height: 36px; font-size: 18px; }
+  .lightbox-prev { left: 8px; }
+  .lightbox-next { right: 8px; }
+}
+
+/* ============================================================
+   🤖 拼图滑块验证码 (Puzzle Slider CAPTCHA)
+   ============================================================ */
+.captcha-wrapper {
+  margin-bottom: 16px;
+}
+
+/* 拼图画布区 */
+.captcha-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  overflow: hidden;
+  user-select: none;
+}
+
+.captcha-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 刷新按钮（右上角） */
+.captcha-refresh-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.4s;
+  z-index: 5;
+}
+
+.captcha-refresh-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.captcha-refresh-btn:hover i {
+  transform: rotate(180deg);
+}
+
+.captcha-refresh-btn i {
+  display: inline-block;
+  transition: transform 0.4s;
+}
+
+/* 状态提示（画布底部覆盖） */
+.captcha-hint-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 4px 12px;
+  font-size: 11px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.captcha-hint-overlay.success {
+  background: rgba(68, 179, 122, 0.6);
+  color: #fff;
+}
+
+.captcha-hint-overlay.error {
+  background: rgba(255, 71, 87, 0.6);
+  color: #fff;
+}
+
+/* 滑块轨道区 */
+.captcha-slider-bar {
+  position: relative;
+  width: 100%;
+  height: 44px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  overflow: hidden;
+  user-select: none;
+}
+
+.captcha-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(68, 179, 122, 0.15), rgba(68, 179, 122, 0.25));
+  transition: width 0.1s ease;
+}
+
+.captcha-track.success {
+  background: linear-gradient(90deg, rgba(68, 179, 122, 0.3), rgba(68, 179, 122, 0.4));
+}
+
+.captcha-track.error {
+  background: linear-gradient(90deg, rgba(255, 71, 87, 0.2), rgba(255, 71, 87, 0.3));
+  animation: captchaShake 0.4s ease;
+}
+
+@keyframes captchaShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.captcha-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 52px;
+  background: var(--accent-green);
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--bg-primary);
+  cursor: grab;
+  z-index: 2;
+  transition: background 0.2s;
+  box-shadow: 0 2px 8px rgba(68, 179, 122, 0.3);
+}
+
+.captcha-slider:active {
+  cursor: grabbing;
+}
+
+.captcha-slider.success {
+  background: var(--accent-green-dark);
+  cursor: default;
+}
+
+.captcha-slider.error {
+  background: var(--accent-red);
+  cursor: default;
+}
+
+.captcha-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 13px;
+  color: var(--text-secondary);
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.captcha-text.hidden {
+  opacity: 0;
+}
+
+.captcha-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   👀 访问计数器
+   ============================================================ */
+.visit-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: rgba(68, 179, 122, 0.08);
+  border: 1px solid rgba(68, 179, 122, 0.2);
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.visit-counter strong {
+  color: var(--accent-green);
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.visit-counter-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* ============================================================
+   🎮 Konami Code 彩蛋（Matrix 雨效果）
+   ============================================================ */
+#konamiCanvas {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+#konamiCanvas.active {
+  display: block;
+}
+
+.konami-hint {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100000;
+  text-align: center;
+  pointer-events: none;
+  display: none;
+  animation: fadeIn 0.5s ease;
+}
+
+.konami-hint.active {
+  display: block;
+}
+
+.konami-hint h1 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  color: var(--accent-green);
+  text-shadow: 0 0 20px rgba(68, 179, 122, 0.8), 0 0 40px rgba(68, 179, 122, 0.4);
+  margin-bottom: 8px;
+}
+
+.konami-hint p {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: rgba(68, 179, 122, 0.7);
+}
+
+/* ============================================================
+   🔍 页内搜索
+   ============================================================ */
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 180px;
+  padding: 8px 12px 8px 36px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.search-input:focus {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 3px rgba(68, 179, 122, 0.1);
+  width: 240px;
+}
+
+.search-input::placeholder {
+  color: var(--placeholder-color);
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 14px;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.search-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 320px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: none;
+}
+
+.search-results.active {
+  display: block;
+}
+
+.search-result-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.2s;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background: rgba(68, 179, 122, 0.08);
+}
+
+.search-result-label {
+  font-size: 11px;
+  color: var(--accent-green);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.search-result-title {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.search-result-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-result-highlight {
+  background: rgba(255, 215, 0, 0.25);
+  border-radius: 2px;
+  padding: 0 2px;
+  font-weight: 600;
+}
+
+.search-no-results {
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   🔔 桌面通知按钮
+   ============================================================ */
+.notify-bell {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+
+.notify-bell:hover {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+}
+
+.notify-bell.active {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+
+.notify-bell.active::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  border: 2px solid var(--bg-card);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* ============================================================
+   📱 响应式补充 (新功能)
+   ============================================================ */
+@media (max-width: 768px) {
+  .search-wrapper { display: none; }
+  .notify-bell { display: none; }
+  .search-input { width: 140px; }
+  .search-results { width: calc(100vw - 40px); right: -20px; }
+  .captcha-canvas-wrap { height: 120px; }
+  .captcha-slider-bar { height: 40px; }
+  .captcha-slider { width: 44px; font-size: 18px; }
+  .bot-controls { flex-direction: column; }
+  .bot-count-selector { flex-wrap: wrap; }
+  .bot-table { font-size: 11px; }
+  .bot-table th, .bot-table td { padding: 6px 4px; }
+}
+
+/* ============================================================
+   🤖 假人控制台面板
+   ============================================================ */
+.bot-login-required {
+  text-align: center;
+  padding: 60px 20px;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
+.bot-login-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.bot-login-required h3 {
+  font-size: 20px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.bot-login-required p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.bot-login-hint {
+  font-size: 12px !important;
+  opacity: 0.7;
+  margin-top: 8px !important;
+}
+
+.bot-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+/* 服务器连接状态 */
+.bot-server-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+}
+
+.bot-server-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bot-server-badge .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bot-server-badge.online {
+  background: rgba(68, 179, 122, 0.15);
+  color: var(--accent-green);
+}
+.bot-server-badge.online .status-dot {
+  background: var(--accent-green);
+  box-shadow: 0 0 6px var(--accent-green);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.bot-server-badge.offline {
+  background: rgba(255, 71, 87, 0.15);
+  color: var(--accent-red);
+}
+.bot-server-badge.offline .status-dot {
+  background: var(--accent-red);
+}
+
+.bot-server-badge.checking {
+  background: rgba(255, 215, 0, 0.15);
+  color: var(--accent-gold);
+}
+.bot-server-badge.checking .status-dot {
+  background: var(--accent-gold);
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+
+.bot-server-info {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* 控制区 */
+.bot-controls {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.bot-control-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.bot-control-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.bot-count-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.bot-count-btn {
+  flex: 1;
+  padding: 8px 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bot-count-btn:hover {
+  border-color: var(--accent-green);
+  background: rgba(68, 179, 122, 0.08);
+}
+
+.bot-count-btn.active {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+  color: var(--bg-primary);
+  box-shadow: 0 2px 8px rgba(68, 179, 122, 0.3);
+}
+
+.bot-action-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-danger {
+  background: var(--accent-red) !important;
+  color: white !important;
+}
+
+.btn-danger:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* 假人列表 */
+.bot-list-container {
+  margin-top: 20px;
+}
+
+.bot-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.bot-list-header h3 {
+  font-size: 16px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bot-list-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  background: rgba(68, 179, 122, 0.15);
+  color: var(--accent-green);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.bot-list-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-color);
+}
+
+.bot-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.bot-table th {
+  text-align: left;
+  padding: 10px 8px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.bot-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.bot-table tbody tr:hover {
+  background: rgba(68, 179, 122, 0.04);
+}
+
+.bot-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.bot-status-badge.connecting { background: rgba(255, 215, 0, 0.15); color: var(--accent-gold); }
+.bot-status-badge.online { background: rgba(68, 179, 122, 0.15); color: var(--accent-green); }
+.bot-status-badge.active { background: rgba(68, 179, 122, 0.2); color: var(--accent-green); box-shadow: 0 0 6px rgba(68, 179, 122, 0.2); }
+.bot-status-badge.offline { background: rgba(136, 146, 176, 0.15); color: var(--text-secondary); }
+.bot-status-badge.kicked { background: rgba(255, 71, 87, 0.15); color: var(--accent-red); }
+.bot-status-badge.error { background: rgba(255, 71, 87, 0.15); color: var(--accent-red); }
+
+.bot-stop-btn {
+  padding: 4px 12px;
+  background: rgba(255, 71, 87, 0.1);
+  border: 1px solid rgba(255, 71, 87, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--accent-red);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bot-stop-btn:hover {
+  background: rgba(255, 71, 87, 0.2);
+  border-color: var(--accent-red);
+}
+
+.bot-yes { color: var(--accent-green); font-weight: 700; }
+.bot-no { color: var(--text-secondary); opacity: 0.5; }

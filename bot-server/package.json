@@ -1,0 +1,15 @@
+{
+  "name": "craftverse-bot-server",
+  "version": "1.0.0",
+  "description": "CraftVerse MC 假人/压测服务 - Express + mineflayer",
+  "main": "bot-server.js",
+  "scripts": {
+    "start": "node bot-server.js",
+    "dev": "node bot-server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "mineflayer": "^4.20.1"
+  }
+}

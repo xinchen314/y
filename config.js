@@ -6,26 +6,24 @@
 const CONFIG = {
   // -------- 服务器基础信息 --------
   server: {
-    name: '§ CRAFTVERSE',           // 服务器名称（显示在标题/页眉）
-    ip: 'play.craftverse.cn',       // 向后兼容：第一个地址
+    name: '§ 永恒森林',             // 服务器名称（显示在标题/页眉）
+    ip: 'pm.rainplay.cn',          // 向后兼容：第一个地址
     addresses: [                    // 多地址列表
-      { label: 'Java 版', address: 'play.craftverse.cn' },
-      { label: '基岩版', address: 'bedrock.craftverse.cn' },
-      { label: '备用地址', address: 'backup.craftverse.cn' },
+      { label: 'Java 版', address: 'pm.rainplay.cn:54160' },
     ],
-    version: '1.21',                // Minecraft 版本
-    tagline: '一个全新的 Minecraft 生存体验服务器',
-    description: '纯净生存 + 特色模组 · 1.21 版本 · 长期稳定运营',
-    playerOnline: 128,              // 当前在线人数（可实时更新）
-    totalPlayers: 1284,             // 累计注册玩家
-    uptimeRate: '99.9%',            // 在线率
+    version: '1.21.1',              // Minecraft 版本
+    tagline: '粘液科技 · 自动化 · 能源核心 — 在传送带与反应堆之间书写你的工业史诗',
+    description: '基于 Slimefun 的工业科技生存服务器 · 1.21.1 Paper · pm.rainplay.cn:54160',
+    playerOnline: 500,              // 当前在线人数（按 MOTD 显示）
+    totalPlayers: 50,               // 累计注册玩家
+    uptimeRate: '90%+',             // 在线率
     stableDays: 365,                // 稳定运行天数
   },
 
   // -------- 管理员密码保护 --------
   // 所有后台操作、API 修改封禁列表均需此密码
   admin: {
-    password: '3.141592653589793238462643383279501',
+    password: '!a1s2d3f4',
   },
 
   // -------- QQ 邮箱登录配置 --------
@@ -63,65 +61,66 @@ const CONFIG = {
   ],
 
   // -------- 服务器特色 --------
+  // 基于 MOTD 主题：粘液科技 / 自动化 / 能源核心
   features: [
     {
       icon: '⛏️',
       title: '纯净生存',
-      desc: '原版生存体验，保留 Minecraft 最纯粹的游戏乐趣。定期更新最新版本内容。',
+      desc: '原版生存作为一切的起点。所有工业发展都从这里一镐一镐挖出来。',
     },
     {
-      icon: '🏰',
-      title: '冒险副本',
-      desc: '专属设计的冒险副本系统，组队挑战强大 BOSS，获取稀有装备和材料。',
+      icon: '🏭',
+      title: '粘液科技',
+      desc: '完整 Slimefun 科技树，从采矿、冶炼到精炼、加工，材料一步步成型。',
     },
     {
-      icon: '🎮',
-      title: '特色小游戏',
-      desc: '空岛战争、饥饿游戏、跑酷等多种小游戏，随时切换放松心情。',
+      icon: '⚙️',
+      title: '自动化机械',
+      desc: '机械臂、自动合成机、加工产线——让机器替你干那些重复的活。',
     },
     {
-      icon: '🛡️',
-      title: '反作弊系统',
-      desc: '强大的反作弊保护，公平竞技环境，24 小时自动监测异常行为。',
+      icon: '⚡',
+      title: '能源核心',
+      desc: '搭建能量网络，给你的工业基地装上一颗稳定跳动的心脏。',
     },
     {
-      icon: '🌐',
-      title: '跨版本兼容',
-      desc: '支持 Java 版与基岩版跨平台联机，不同设备玩家畅快共游同一世界。',
+      icon: '🔋',
+      title: '电力系统',
+      desc: '从基础发电机到高级反应堆，多种发电方式自由选择。',
+    },
+    {
+      icon: '🚚',
+      title: '传送带物流',
+      desc: '用传送带把矿石、锭块、成品从矿区一路运到你的工厂。',
     },
     {
       icon: '💰',
-      title: '经济系统',
-      desc: '完善的玩家经济体系，支持商店交易、拍卖行、玩家间转账等功能。',
+      title: '玩家经济',
+      desc: '玩家间自由交易，服务器商店与拍卖行支持。',
     },
     {
       icon: '🏠',
       title: '领地保护',
-      desc: '自助领地申请与保护系统，守护你的家园不被恶意破坏。',
-    },
-    {
-      icon: '🎨',
-      title: '自定义纹理',
-      desc: '支持自定义材质包与皮肤，打造独一无二的游戏视觉体验。',
+      desc: '自助领地申请，保护你的工业基地不被误伤或恶意破坏。',
     },
   ],
 
   // -------- 服务器公告 --------
   announcements: [
     {
-      date: '2026.07.01',
-      title: '服务器 1.21 版本升级完成',
-      content: 'CraftVerse 已正式升级至 Minecraft 1.21 版本，新增试炼密室、微风人等新内容。',
+      date: '2026.07.10',
+      title: '服务器升级至 1.21.1 Paper',
+      content: '已升级到 Paper 1.21.1（协议 767），粘液科技与自动化插件同步适配，性能优化中。',
+    },
+    {
+      date: '2026.07.05',
+      title: '能源核心系统全面开放',
+      content: '发电、能量传输、能源存储全链路打通，反应堆上线。造一座你的能源核心吧。',
     },
     {
       date: '2026.06.28',
-      title: '暑期建筑大赛开启',
-      content: '即日起至 7 月 31 日，参与建筑大赛赢取专属称号与游戏内奖励。',
-    },
-    {
-      date: '2026.06.25',
-      title: '新副本「远古遗迹」上线',
-      content: '挑战全新团队副本，获取传说级装备与稀有材料。已有多支队伍通关。',
+      title: '自动化与传送带网络上线',
+      content: '机械臂、自动合成机、加工机已开放；传送带可连接任意设备搭出你的产线。',
     },
   ],
 
@@ -150,6 +149,34 @@ const CONFIG = {
     '请尊重管理员和其他玩家，共同维护良好游戏环境',
   ],
 
+  // -------- 活动倒计时 --------
+  // 倒计时到期后自动隐藏；如无活动可置空数组 []
+  countdowns: [],
+
+  // -------- 服务器实时状态查询 --------
+  // 使用 MCSrvStat 免费 API（无需密钥）
+  // 自动查询 Java 版 / 基岩版 在线状态
+  serverStatus: {
+    enabled: true,            // 开启实时查询
+    javaHost: 'pm.rainplay.cn',      // Java 版地址
+    javaPort: 54160,         // Java 版端口
+    bedrockHost: 'bedrock.rainplay.cn', // 基岩版地址
+    bedrockPort: 19132,       // 基岩版端口
+    refreshInterval: 60,      // 自动刷新间隔（秒），最小 30
+    showPlayerList: true,     // 显示在线玩家列表（头颅）
+    maxPlayerHeads: 12,       // 最多显示多少个玩家头颅
+  },
+
+  // -------- 假人/Bot 压测服务 --------
+  // 连接到 bot-server 后端（Express + mineflayer）
+  botServer: {
+    enabled: true,
+    url: 'http://localhost:3141',   // bot-server API 地址
+    password: '!a1s2d3f4',          // 对接后端 bot-server 的鉴权密码（与后台一致）
+    maxBotsPerUser: 20,              // 每个用户最大假人数
+    autoRefresh: 5000,               // 状态自动刷新间隔（毫秒）
+  },
+
   // -------- 主题定制 --------
   // 可自由修改网站配色
   theme: {
@@ -167,10 +194,11 @@ const CONFIG = {
   },
   // -------- 服务器发展历程 --------
   timeline: [
-    { date: '2026.03', title: '服务器开服', desc: 'CraftVerse 正式上线，首日即迎来 200+ 玩家加入。' },
-    { date: '2026.04', title: '首个大型更新', desc: '新增冒险副本系统、经济插件和领地保护功能。' },
-    { date: '2026.05', title: '社区突破 500 人', desc: 'QQ 群突破 500 人，举办首次建筑大赛活动。' },
-    { date: '2026.06', title: '暑期大版本', desc: '升级 1.21 版本，新增小游戏大厅、全新副本和反作弊系统。' },
+    { date: '2026.03', title: '服务器开服', desc: '永恒森林正式上线，Slimefun 粘液科技核心模块同步开启。' },
+    { date: '2026.04', title: '经济与领地上线', desc: '玩家间交易系统与自助领地保护功能开放。' },
+    { date: '2026.05', title: '传送带与机械', desc: '自动化机械与传送带物流网络进入测试。' },
+    { date: '2026.06', title: '能源系统', desc: '电力系统上线，能源核心与反应堆正式可用。' },
+    { date: '2026.07', title: '升级 1.21.1', desc: '服务端升级到 Paper 1.21.1，性能与粘液科技适配同步完成。' },
   ],
 
   // -------- 常见问题 FAQ --------
@@ -192,71 +220,62 @@ const CONFIG = {
   // -------- 游戏模式详情 --------
   gameModes: [
     {
-      id: 'survival',
-      name: '纯净生存',
-      icon: '⛏️',
-      desc: '原版生存体验，保留 Minecraft 最纯粹的游戏乐趣。定期更新最新版本内容，纯净无魔改。',
-      players: 86,
+      id: 'industry',
+      name: '工业科技',
+      icon: '🏭',
+      desc: '基于 Slimefun 的完整工业体系：采矿、冶炼、加工、自动化、发电、能源网络一应俱全。',
+      players: 500,
       rating: 4.9,
     },
     {
-      id: 'adventure',
-      name: '冒险副本',
-      icon: '⚔️',
-      desc: '专属设计的冒险副本系统，包含远古遗迹、暗影城堡、冰霜洞穴等多个副本，组队挑战获取稀有装备。',
-      players: 42,
+      id: 'survival',
+      name: '纯净生存',
+      icon: '⛏️',
+      desc: '原版生存玩法作为一切的起点，所有工业发展都从这里一镐一镐挖出来。',
+      players: 500,
       rating: 4.8,
-    },
-    {
-      id: 'minigames',
-      name: '休闲小游戏',
-      icon: '🎯',
-      desc: '空岛战争、饥饿游戏、跑酷、掘一死战等多种小游戏随时切换，放松心情的最佳选择。',
-      players: 28,
-      rating: 4.7,
     },
   ],
 
   // -------- 版本更新日志 --------
   changelog: [
     {
-      version: '1.21.0',
-      date: '2026-07-01',
+      version: '1.21.1',
+      date: '2026-07-10',
       changes: [
-        { type: 'added', text: '新增试炼密室副本内容' },
-        { type: 'added', text: '新增微风人生物及掉落物' },
-        { type: 'added', text: '新增暑期建筑大赛活动系统' },
-        { type: 'changed', text: '优化服务器 TPS 性能，减少延迟' },
-        { type: 'fixed', text: '修复部分玩家领地保护失效问题' },
+        { type: 'changed', text: '升级到 Paper 1.21.1，协议版本 767' },
+        { type: 'added', text: '粘液科技插件适配 1.21.1' },
+        { type: 'changed', text: '优化工业基地区块加载性能' },
+        { type: 'fixed', text: '修复传送带偶发断连问题' },
+      ],
+    },
+    {
+      version: '1.21.0',
+      date: '2026-07-05',
+      changes: [
+        { type: 'added', text: '能源核心系统全面开放（发电/传输/存储）' },
+        { type: 'added', text: '上线高级反应堆配方' },
+        { type: 'changed', text: '平衡发电机能量产出曲线' },
       ],
     },
     {
       version: '1.20.5',
-      date: '2026-06-15',
+      date: '2026-06-28',
       changes: [
-        { type: 'added', text: '新增远古遗迹团队副本' },
-        { type: 'added', text: '新增反作弊系统 v2.0' },
-        { type: 'changed', text: '经济系统平衡性调整' },
-        { type: 'removed', text: '移除过期节日活动道具' },
-      ],
-    },
-    {
-      version: '1.20.0',
-      date: '2026-05-20',
-      changes: [
-        { type: 'added', text: '新增小游戏大厅系统' },
-        { type: 'added', text: '新增空岛战争模式' },
-        { type: 'added', text: '新增玩家称号系统' },
-        { type: 'fixed', text: '修复登录时偶尔卡顿问题' },
+        { type: 'added', text: '自动化机械全面上线（机械臂、自动合成机）' },
+        { type: 'added', text: '传送带物流网络（多级速度）' },
+        { type: 'added', text: '电力系统基础发电机与电缆' },
+        { type: 'removed', text: '移除部分低利用率粘液物品' },
       ],
     },
     {
       version: '1.0.0',
       date: '2026-03-01',
       changes: [
-        { type: 'added', text: 'CraftVerse 服务器正式开服' },
+        { type: 'added', text: '永恒森林正式开服' },
         { type: 'added', text: '初始生存世界开放' },
         { type: 'added', text: '基础经济与领地系统上线' },
+        { type: 'added', text: 'Slimefun 粘液科技核心模块安装' },
       ],
     },
   ],

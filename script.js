@@ -1,5 +1,5 @@
 // ============================================================
-// CraftVerse MC 服务器官网 - 主站交互脚本
+// 永恒森林 MC 服务器官网 - 主站交互脚本
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
     html += '<div class="auth-header">' +
       '<div class="auth-logo"><svg width="40" height="40" viewBox="0 0 24 24"><path fill="#44B37A" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></div>' +
       '<h2 class="auth-title">' + (isLogin ? '欢迎回来' : '创建账户') + '</h2>' +
-      '<p class="auth-subtitle">' + (isLogin ? '登录 CraftVerse 服务器' : '加入 CraftVerse 大家庭') + '</p>' +
+      '<p class="auth-subtitle">' + (isLogin ? '登录永恒森林服务器' : '加入永恒森林大家庭') + '</p>' +
     '</div>';
 
     if (showSocial) {
@@ -494,6 +494,8 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('loginBtn')?.addEventListener('click', () => openAuthModal('login'));
       document.getElementById('registerBtn')?.addEventListener('click', () => openAuthModal('register'));
     }
+    // 广播登录态变化，供假人面板等模块实时响应
+    window.dispatchEvent(new CustomEvent('mc-user-changed', { detail: user || null }));
   }
 
   window.logout = function() {
@@ -732,22 +734,429 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // =========================================================
-  // 💬 玩家评论区
+  // 💬 玩家评论区（含点赞 / 排序 + 滑块验证）
   // =========================================================
+  let commentSortMode = 'newest'; // 'newest' | 'hottest'
+  let captchaVerified = false;    // 滑块验证状态
+  let captchaToken = null;        // 验证通过后的 token（含校验和）
+  let resetCaptchaFn = null;      // 外部可调用的重置函数
+
+  // ---- 拼图滑块验证码 ----
+  function initCaptcha() {
+    const wrap = document.getElementById('captchaCanvasWrap');
+    const canvas = document.getElementById('captchaCanvas');
+    const sliderBar = document.getElementById('captchaContainer');
+    const slider = document.getElementById('captchaSlider');
+    const track = document.getElementById('captchaTrack');
+    const text = document.getElementById('captchaText');
+    const hint = document.getElementById('captchaHint');
+    const refresh = document.getElementById('captchaRefresh');
+    if (!canvas || !slider || !wrap) return;
+
+    const ctx = canvas.getContext('2d');
+    const CW = canvas.width;   // 画布逻辑宽
+    const CH = canvas.height;  // 画布逻辑高
+    const PIECE_SIZE = 44;      // 拼图块尺寸
+    const TOLERANCE = 10;       // 对齐容差（像素，放宽方便人类操作）
+
+    let gapX = 0;              // 缺口 X 位置（随机）
+    let puzzleX = 0;           // 拼图块当前 X（跟随滑块）
+    let isDragging = false;
+    let startX = 0;
+    let currentX = 0;
+    let dragStartTime = 0;
+    let trajectory = [];       // 拖拽轨迹 [{x, y, t}]
+    let bgImageData = null;    // 背景图像缓存
+
+    // --- 简易校验和 ---
+    function makeChecksum(val) {
+      const str = String(val) + 'cv_salt_2026';
+      let h = 0;
+      for (let i = 0; i < str.length; i++) {
+        h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+      }
+      return h;
+    }
+
+    // --- 生成随机背景 ---
+    function generateBackground() {
+      // 随机渐变背景
+      const hue1 = Math.floor(Math.random() * 360);
+      const hue2 = (hue1 + 40 + Math.random() * 60) % 360;
+      const grad = ctx.createLinearGradient(0, 0, CW, CH);
+      grad.addColorStop(0, 'hsl(' + hue1 + ', 50%, 25%)');
+      grad.addColorStop(0.5, 'hsl(' + ((hue1 + hue2) / 2) + ', 40%, 20%)');
+      grad.addColorStop(1, 'hsl(' + hue2 + ', 55%, 30%)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, CW, CH);
+
+      // 随机几何装饰
+      for (let i = 0; i < 8; i++) {
+        ctx.beginPath();
+        const shape = Math.random();
+        const x = Math.random() * CW;
+        const y = Math.random() * CH;
+        const r = 10 + Math.random() * 30;
+        if (shape < 0.33) {
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+        } else if (shape < 0.66) {
+          ctx.rect(x - r, y - r, r * 2, r * 2);
+        } else {
+          ctx.moveTo(x, y - r);
+          ctx.lineTo(x + r, y + r);
+          ctx.lineTo(x - r, y + r);
+          ctx.closePath();
+        }
+        ctx.fillStyle = 'hsla(' + (hue1 + Math.random() * 60) + ', 60%, 50%, ' + (0.08 + Math.random() * 0.12) + ')';
+        ctx.fill();
+      }
+
+      // 随机噪点
+      for (let i = 0; i < 200; i++) {
+        ctx.fillStyle = 'rgba(255,255,255,' + (Math.random() * 0.06) + ')';
+        ctx.fillRect(Math.random() * CW, Math.random() * CH, 2, 2);
+      }
+    }
+
+
+    // --- 拼图路径定义（复用） ---
+    function puzzlePath(px, py, s, bump) {
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + s / 2 - bump, py);
+      ctx.arc(px + s / 2, py, bump, Math.PI, 0, false);
+      ctx.lineTo(px + s / 2 + bump, py);
+      ctx.lineTo(px + s, py);
+      ctx.lineTo(px + s, py + s / 2 - bump);
+      ctx.arc(px + s, py + s / 2, bump, -Math.PI / 2, Math.PI / 2, false);
+      ctx.lineTo(px + s, py + s);
+      ctx.lineTo(px + s / 2 + bump, py + s);
+      ctx.arc(px + s / 2, py + s, bump, 0, Math.PI, false);
+      ctx.lineTo(px, py + s);
+      ctx.lineTo(px, py + s / 2 + bump);
+      ctx.arc(px, py + s / 2, bump, Math.PI / 2, -Math.PI / 2, false);
+      ctx.closePath();
+    }
+
+    // --- 缺口脉冲动画 ---
+    let pulseAnimId = null;
+    function startPulse() {
+      if (pulseAnimId) return;
+      function pulse() {
+        if (captchaVerified) { stopPulse(); return; }
+        if (isDragging) { pulseAnimId = requestAnimationFrame(pulse); return; }
+        const t = performance.now() / 600;
+        const alpha = 0.5 + 0.4 * Math.abs(Math.sin(t));
+        redrawWithPulse(alpha);
+        pulseAnimId = requestAnimationFrame(pulse);
+      }
+      pulse();
+    }
+    function stopPulse() {
+      if (pulseAnimId) { cancelAnimationFrame(pulseAnimId); pulseAnimId = null; }
+    }
+
+    function redrawWithPulse(gapAlpha) {
+      if (bgImageData) {
+        ctx.putImageData(bgImageData, 0, 0);
+      } else {
+        generateBackground();
+        bgImageData = ctx.getImageData(0, 0, CW, CH);
+      }
+      // 缺口（带脉冲发光）
+      const y = (CH - PIECE_SIZE) / 2;
+      const s = PIECE_SIZE;
+      const bump = 8;
+      puzzlePath(gapX, y, s, bump);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 200, 50, ' + gapAlpha + ')';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([6, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255, 200, 50, ' + (gapAlpha * 0.9) + ')';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('对准这里', gapX + s / 2, y - 6);
+      // 拼图块
+      drawPiece(puzzleX);
+    }
+
+    // --- 绘制缺口（静态版） ---
+    function drawGap(x) {
+      ctx.save();
+      const y = (CH - PIECE_SIZE) / 2;
+      const s = PIECE_SIZE;
+      const bump = 8;
+      puzzlePath(x, y, s, bump);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 200, 50, 0.8)';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([6, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255, 200, 50, 0.8)';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('对准这里', x + s / 2, y - 6);
+      ctx.restore();
+    }
+
+    // --- 绘制可拖动的拼图块 ---
+    function drawPiece(x) {
+      ctx.save();
+      const y = (CH - PIECE_SIZE) / 2;
+      const s = PIECE_SIZE;
+      const bump = 8;
+      puzzlePath(x, y, s, bump);
+      // 裁剪后绘制对应区域的背景
+      ctx.save();
+      ctx.clip();
+      if (bgImageData) {
+        ctx.putImageData(bgImageData, 0, 0);
+      }
+      ctx.restore();
+      // 描边
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // --- 全量重绘（带脉冲） ---
+    function redraw() {
+      const t = performance.now() / 600;
+      const alpha = 0.5 + 0.4 * Math.abs(Math.sin(t));
+      redrawWithPulse(alpha);
+    }
+
+    // --- 初始化新的拼图 ---
+    function newPuzzle() {
+      captchaVerified = false;
+      captchaToken = null;
+      stopPulse();
+      generateBackground();
+      bgImageData = ctx.getImageData(0, 0, CW, CH);
+      // 随机缺口位置（范围：PIECE_SIZE ~ CW - PIECE_SIZE * 2）
+      gapX = PIECE_SIZE + Math.random() * (CW - PIECE_SIZE * 3);
+      puzzleX = 0;
+      // 重绘
+      ctx.putImageData(bgImageData, 0, 0);
+      drawGap(gapX);
+      drawPiece(0);
+      // 启动脉冲
+      startPulse();
+      // 重置滑块
+      currentX = 0;
+      slider.style.left = '0px';
+      track.style.width = '0%';
+      slider.className = 'captcha-slider';
+      track.className = 'captcha-track';
+      slider.innerHTML = '→';
+      text.textContent = '向右拖动滑块';
+      text.classList.remove('hidden');
+      hint.textContent = '拖动下方滑块完成拼图验证';
+      hint.className = 'captcha-hint-overlay';
+    }
+
+    function getMaxX() { return sliderBar.offsetWidth - slider.offsetWidth; }
+
+    // --- 轨迹分析：检测是否为人类操作 ---
+    function analyzeTrajectory(traj) {
+      if (traj.length < 5) return { isBot: true, reason: '轨迹点过少' };
+      // 1. 时间检查：太快 = 机器人
+      const totalTime = traj[traj.length - 1].t - traj[0].t;
+      if (totalTime < 400) return { isBot: true, reason: '操作过快（' + totalTime + 'ms）' };
+      // 2. 轨迹直线度检测：计算 Y 方向抖动
+      let yVariance = 0;
+      let yMean = 0;
+      traj.forEach(p => yMean += p.y);
+      yMean /= traj.length;
+      traj.forEach(p => yVariance += Math.pow(p.y - yMean, 2));
+      yVariance /= traj.length;
+      if (yVariance < 2) return { isBot: true, reason: '轨迹过于笔直（无自然抖动）' };
+      // 3. 速度变化检测：人类有加速减速
+      let prevSpeed = 0;
+      let directionChanges = 0;
+      for (let i = 1; i < traj.length; i++) {
+        const dx = traj[i].x - traj[i - 1].x;
+        const dt = Math.max(traj[i].t - traj[i - 1].t, 1);
+        const speed = Math.abs(dx / dt);
+        if (prevSpeed > 0 && Math.abs(speed - prevSpeed) > 0.5) directionChanges++;
+        prevSpeed = speed;
+      }
+      if (directionChanges < 2) return { isBot: true, reason: '速度变化不自然' };
+      return { isBot: false, reason: '通过' };
+    }
+
+    function onStart(e) {
+      if (captchaVerified) return;
+      isDragging = true;
+      startX = (e.touches ? e.touches[0].clientX : e.clientX) - currentX;
+      dragStartTime = performance.now();
+      trajectory = [{ x: currentX, y: 0, t: dragStartTime }];
+      slider.style.transition = 'none';
+      track.style.transition = 'none';
+      text.classList.add('hidden');
+      hint.className = 'captcha-hint-overlay';
+      hint.textContent = '验证中...';
+      e.preventDefault();
+    }
+
+    function onMove(e) {
+      if (!isDragging) return;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? (e.touches[0].clientY || 0) : (e.clientY || 0);
+      const maxX = getMaxX();
+      currentX = Math.max(0, Math.min(clientX - startX, maxX));
+      slider.style.left = currentX + 'px';
+      track.style.width = (currentX / maxX * 100) + '%';
+      // 拼图块跟随滑块
+      puzzleX = (currentX / maxX) * (CW - PIECE_SIZE);
+      redraw();
+      // 实时距离提示
+      const diff = puzzleX - gapX;
+      if (diff > 30) hint.textContent = '还差 ' + Math.round(diff) + 'px，继续往右拖';
+      else if (diff > 12) hint.textContent = '快到了！再往右一点点';
+      else if (diff >= -10 && diff <= 10) hint.textContent = '对齐了！松手验证';
+      else if (diff < -10 && diff >= -30) hint.textContent = '稍微过了，往左回一点点';
+      else if (diff < -30) hint.textContent = '过太多了，往左拖回一些';
+      // 记录轨迹
+      trajectory.push({ x: currentX, y: clientY, t: performance.now() });
+      if (currentX > 5) text.classList.add('hidden');
+      else text.classList.remove('hidden');
+    }
+
+    function onEnd() {
+      if (!isDragging) return;
+      isDragging = false;
+      slider.style.transition = 'left 0.3s ease';
+      track.style.transition = 'width 0.3s ease';
+      trajectory.push({ x: currentX, y: 0, t: performance.now() });
+
+      // 1. 轨迹分析
+      const analysis = analyzeTrajectory(trajectory);
+      if (analysis.isBot) {
+        failCaptcha('检测到机器人行为：' + analysis.reason);
+        return;
+      }
+
+      // 2. 拼图对齐检测
+      const diff = Math.abs(puzzleX - gapX);
+      if (diff <= TOLERANCE) {
+        // 验证通过
+        captchaVerified = true;
+        captchaToken = makeChecksum(gapX);
+        stopPulse();
+        slider.classList.add('success');
+        track.classList.add('success');
+        slider.innerHTML = '✓';
+        slider.style.left = getMaxX() + 'px';
+        track.style.width = '100%';
+        // 拼图对齐到目标位置
+        puzzleX = gapX;
+        redraw();
+        text.textContent = '验证通过 ✓';
+        text.classList.remove('hidden');
+        hint.textContent = '验证成功！可以发表评论了';
+        hint.className = 'captcha-hint-overlay success';
+        showToast('拼图验证通过！', 'success');
+      } else {
+        failCaptcha('拼图未对齐（偏差 ' + Math.round(diff) + 'px，容差 ' + TOLERANCE + 'px）');
+      }
+    }
+
+    function failCaptcha(reason) {
+      slider.classList.add('error');
+      track.classList.add('error');
+      hint.textContent = '验证失败：' + reason;
+      hint.className = 'captcha-hint-overlay error';
+      showToast('验证失败：' + reason, 'error');
+      setTimeout(() => { resetCaptcha(); }, 600);
+    }
+
+    function resetCaptcha() {
+      newPuzzle();
+    }
+
+    // 暴露给外部调用
+    resetCaptchaFn = resetCaptcha;
+
+    // 绑定事件
+    slider.addEventListener('mousedown', onStart);
+    slider.addEventListener('touchstart', onStart, { passive: false });
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchend', onEnd);
+
+    // 刷新
+    refresh?.addEventListener('click', () => {
+      resetCaptcha();
+      showToast('验证码已刷新', 'info');
+    });
+
+    // 窗口 resize 时重绘
+    window.addEventListener('resize', () => {
+      if (!captchaVerified) {
+        const newMax = getMaxX();
+        if (currentX > newMax) {
+          currentX = newMax;
+          slider.style.left = currentX + 'px';
+          track.style.width = '100%';
+        }
+        redraw();
+      }
+    });
+
+    // 初始化第一张拼图
+    newPuzzle();
+  }
+
   function initComments() {
     const textarea = document.getElementById('commentInput');
     const submitBtn = document.getElementById('commentSubmit');
     const listEl = document.getElementById('commentList');
     if (!textarea || !submitBtn || !listEl) return;
 
+    // 插入排序标签
+    const sortTabs = document.createElement('div');
+    sortTabs.className = 'comment-sort-tabs';
+    sortTabs.innerHTML =
+      '<button class="comment-sort-tab active" data-sort="newest">最新</button>' +
+      '<button class="comment-sort-tab" data-sort="hottest">最热</button>';
+    listEl.parentNode.insertBefore(sortTabs, listEl);
+
+    sortTabs.querySelectorAll('.comment-sort-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        sortTabs.querySelectorAll('.comment-sort-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        commentSortMode = tab.dataset.sort;
+        renderComments();
+      });
+    });
+
+    function getLikedComments() {
+      return JSON.parse(localStorage.getItem('mc_liked_comments') || '[]');
+    }
+
     function renderComments() {
-      const comments = JSON.parse(localStorage.getItem('mc_comments') || '[]');
+      let comments = JSON.parse(localStorage.getItem('mc_comments') || '[]');
       if (comments.length === 0) {
         listEl.innerHTML = '<div class="comment-empty">还没有评论，快来抢沙发吧！</div>';
         return;
       }
-      listEl.innerHTML = comments.map(c =>
-        '<div class="comment-item">' +
+      // 排序
+      if (commentSortMode === 'hottest') {
+        comments.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+      }
+      const likedIds = getLikedComments();
+      listEl.innerHTML = comments.map((c, i) => {
+        const cid = c.id || ('c_' + i);
+        const liked = likedIds.includes(cid);
+        return '<div class="comment-item">' +
           '<div class="comment-header">' +
             '<div class="comment-avatar">' + (c.name || 'U').charAt(0).toUpperCase() + '</div>' +
             '<div>' +
@@ -756,23 +1165,71 @@ document.addEventListener('DOMContentLoaded', () => {
             '</div>' +
           '</div>' +
           '<div class="comment-text">' + c.text + '</div>' +
-        '</div>'
-      ).join('');
+          '<div class="comment-actions">' +
+            '<button class="comment-like-btn' + (liked ? ' liked' : '') + '" data-cid="' + cid + '" data-idx="' + i + '">' +
+              '<span class="like-icon">' + (liked ? '❤️' : '🤍') + '</span>' +
+              '<span class="comment-like-count">' + (c.likes || 0) + '</span>' +
+            '</button>' +
+            '<span class="comment-delete-btn" data-idx="' + i + '">删除</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      // 绑定点赞
+      listEl.querySelectorAll('.comment-like-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const cid = btn.dataset.cid;
+          const idx = parseInt(btn.dataset.idx);
+          const comments = JSON.parse(localStorage.getItem('mc_comments') || '[]');
+          let likedIds = getLikedComments();
+          if (likedIds.includes(cid)) {
+            likedIds = likedIds.filter(id => id !== cid);
+            comments[idx].likes = Math.max(0, (comments[idx].likes || 0) - 1);
+          } else {
+            likedIds.push(cid);
+            comments[idx].likes = (comments[idx].likes || 0) + 1;
+          }
+          localStorage.setItem('mc_comments', JSON.stringify(comments));
+          localStorage.setItem('mc_liked_comments', JSON.stringify(likedIds));
+          renderComments();
+        });
+      });
+
+      // 绑定删除
+      listEl.querySelectorAll('.comment-delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx);
+          if (!confirm('确定要删除这条评论吗？')) return;
+          const comments = JSON.parse(localStorage.getItem('mc_comments') || '[]');
+          comments.splice(idx, 1);
+          localStorage.setItem('mc_comments', JSON.stringify(comments));
+          renderComments();
+          showToast('评论已删除', 'info');
+        });
+      });
     }
 
     submitBtn.addEventListener('click', () => {
       const text = textarea.value.trim();
       if (!text) { showToast('请输入评论内容', 'error'); return; }
       if (text.length > 500) { showToast('评论最多 500 字', 'error'); return; }
+      // 人机验证检查（双重校验：变量 + token）
+      if (!captchaVerified || !captchaToken) { showToast('请先完成拼图验证！', 'error'); return; }
       const user = JSON.parse(localStorage.getItem('mc_current_user') || 'null');
       const comments = JSON.parse(localStorage.getItem('mc_comments') || '[]');
       comments.unshift({
+        id: 'c_' + Date.now(),
         name: user ? (user.username || user.email) : '游客',
         text: text.replace(/</g, '&lt;').replace(/>/g, '&gt;'),
         time: new Date().toLocaleString('zh-CN'),
+        likes: 0,
       });
       localStorage.setItem('mc_comments', JSON.stringify(comments));
       textarea.value = '';
+      // 重置验证码
+      captchaVerified = false;
+      captchaToken = null;
+      if (resetCaptchaFn) resetCaptchaFn();
       renderComments();
       showToast('评论发布成功！', 'success');
     });
@@ -787,7 +1244,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('changelogGrid');
     if (!container) return;
     const items = CONFIG.changelog || [];
-    if (!items.length) return;
+    if (!items.length) { container.innerHTML = '<div class="comment-empty">暂无更新日志</div>'; return; }
     container.innerHTML = items.map(c =>
       '<div class="changelog-item">' +
         '<div class="changelog-version">v' + c.version + '</div>' +
@@ -797,6 +1254,846 @@ document.addEventListener('DOMContentLoaded', () => {
         '</ul>' +
       '</div>'
     ).join('');
+  }
+
+  // =========================================================
+  // 📈 阅读进度条
+  // =========================================================
+  function initReadProgress() {
+    const bar = document.getElementById('readProgressBar');
+    if (!bar) return;
+    function updateProgress() {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      bar.style.width = Math.min(100, progress) + '%';
+    }
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    updateProgress();
+  }
+
+  // =========================================================
+  // ⌨️ 打字机效果（Hero 副标题）
+  // =========================================================
+  function initTypewriter() {
+    const subtitle = document.querySelector('.hero-subtitle');
+    if (!subtitle) return;
+    const originalText = subtitle.textContent;
+    if (!originalText) return;
+
+    let i = 0;
+    subtitle.textContent = '';
+    subtitle.style.visibility = 'visible';
+
+    function type() {
+      if (i < originalText.length) {
+        subtitle.textContent = originalText.substring(0, i + 1);
+        i++;
+        // 换行/空格快一点，标点慢一点
+        const ch = originalText[i - 1];
+        let delay = 40;
+        if (ch === ' ' || ch === '·') delay = 20;
+        if (ch === '，' || ch === '。' || ch === '·' || ch === '+') delay = 80;
+        setTimeout(type, delay);
+      } else {
+        // 加光标
+        const cursor = document.createElement('span');
+        cursor.className = 'typewriter-cursor';
+        cursor.textContent = '';
+        subtitle.appendChild(cursor);
+        // 6 秒后移除光标
+        setTimeout(() => { if (cursor.parentNode) cursor.remove(); }, 6000);
+      }
+    }
+    // 延迟启动，等粒子动画初始化
+    setTimeout(type, 500);
+  }
+
+  // =========================================================
+  // ⏰ 活动倒计时
+  // =========================================================
+  function initCountdowns() {
+    const container = document.getElementById('countdownGrid');
+    if (!container) return;
+    const countdowns = CONFIG.countdowns || [];
+    if (!countdowns.length) {
+      container.parentElement.parentElement.style.display = 'none';
+      return;
+    }
+
+    function renderCountdowns() {
+      const now = Date.now();
+      const active = countdowns.filter(c => new Date(c.endDate).getTime() > now);
+      if (active.length === 0) {
+        container.parentElement.parentElement.style.display = 'none';
+        return;
+      }
+      container.innerHTML = active.map((c, idx) => {
+        const diff = new Date(c.endDate).getTime() - now;
+        const days = Math.floor(diff / 86400000);
+        const hours = Math.floor((diff % 86400000) / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+        return '<div class="countdown-card">' +
+          '<div class="countdown-card-title">' + c.title + '</div>' +
+          '<div class="countdown-card-subtitle">' + c.subtitle + '</div>' +
+          '<div class="countdown-timer" data-end="' + c.endDate + '">' +
+            '<div class="countdown-unit"><div class="countdown-number">' + String(days).padStart(2, '0') + '</div><div class="countdown-label">天</div></div>' +
+            '<div class="countdown-unit"><div class="countdown-number">' + String(hours).padStart(2, '0') + '</div><div class="countdown-label">时</div></div>' +
+            '<div class="countdown-unit"><div class="countdown-number">' + String(mins).padStart(2, '0') + '</div><div class="countdown-label">分</div></div>' +
+            '<div class="countdown-unit"><div class="countdown-number">' + String(secs).padStart(2, '0') + '</div><div class="countdown-label">秒</div></div>' +
+          '</div>' +
+          (c.ctaLink ? '<a href="' + c.ctaLink + '" class="countdown-cta">' + (c.ctaText || '了解') + ' →</a>' : '') +
+        '</div>';
+      }).join('');
+    }
+
+    renderCountdowns();
+    setInterval(renderCountdowns, 1000);
+  }
+
+  // =========================================================
+  // 📊 服务器实时状态查询（MCSrvStat API）
+  // =========================================================
+  async function initServerStatus() {
+    const container = document.getElementById('serverStatusContainer');
+    if (!container) return;
+    const cfg = CONFIG.serverStatus;
+    if (!cfg || !cfg.enabled) { container.style.display = 'none'; return; }
+    let prevServerOnline = undefined; // 追踪上次状态，用于桌面通知
+
+    function renderStatusCard(state) {
+      const badge = state.online
+        ? '<span class="server-status-badge online"><span class="status-dot"></span> 在线</span>'
+        : '<span class="server-status-badge offline"><span class="status-dot"></span> 离线</span>';
+
+      const motdHtml = state.online && state.motd
+        ? '<div class="server-status-motd">' + state.motd.replace(/\n/g, '<br>') + '</div>'
+        : '';
+
+      const playersStr = state.online && state.maxPlayers != null
+        ? state.players + ' / ' + state.maxPlayers
+        : '--';
+
+      const versionStr = state.online && state.version ? state.version : '--';
+
+      const iconHtml = state.icon
+        ? '<img src="' + state.icon + '" alt="服务器图标">'
+        : '🎮';
+
+      // 玩家头颅
+      let headsHtml = '';
+      if (state.online && cfg.showPlayerList && state.playerList && state.playerList.length > 0) {
+        const maxHeads = cfg.maxPlayerHeads || 12;
+        const shown = state.playerList.slice(0, maxHeads);
+        const remaining = state.playerList.length - shown.length;
+        headsHtml = '<div class="player-heads-section">' +
+          '<div class="player-heads-title">在线玩家 (' + state.playerList.length + ')</div>' +
+          '<div class="player-heads">' +
+            shown.map(p =>
+              '<div class="player-head" title="' + p + '">' +
+                '<img src="https://mc-heads.net/avatar/' + encodeURIComponent(p) + '/40" alt="' + p + '" loading="lazy">' +
+                '<div class="player-head-tooltip">' + p + '</div>' +
+              '</div>'
+            ).join('') +
+            (remaining > 0 ? '<div class="player-heads-more">+' + remaining + '</div>' : '') +
+          '</div></div>';
+      }
+
+      container.innerHTML =
+        '<div class="server-status-card">' +
+          '<div class="server-status-header">' +
+            '<div class="server-status-icon">' + iconHtml + '</div>' +
+            '<div class="server-status-info">' +
+              '<div class="server-status-name">' + (state.name || cfg.javaHost) + '</div>' +
+              '<div class="server-status-meta">' +
+                '<span>👥 ' + playersStr + '</span>' +
+                '<span>📦 ' + versionStr + '</span>' +
+                '<span>🌐 ' + cfg.javaHost + (cfg.javaPort !== 25565 ? ':' + cfg.javaPort : '') + '</span>' +
+                badge +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          motdHtml +
+          headsHtml +
+        '</div>';
+    }
+
+    // 加载中状态
+    container.innerHTML =
+      '<div class="server-status-card">' +
+        '<div class="server-status-header">' +
+          '<div class="server-status-icon">🎮</div>' +
+          '<div class="server-status-info">' +
+            '<div class="server-status-name">' + cfg.javaHost + '</div>' +
+            '<div class="server-status-meta"><span class="server-status-badge loading"><span class="status-dot"></span> 查询中...</span></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    async function queryServer() {
+      try {
+        const host = cfg.javaHost;
+        const port = cfg.javaPort;
+        const url = 'https://api.mcsrvstat.us/3/' + host + (port !== 25565 ? ':' + port : '');
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+
+        // 桌面通知：状态变化检测
+        if (typeof prevServerOnline !== 'undefined') {
+          const nowOnline = !!data.online;
+          if (prevServerOnline !== nowOnline && Notification.permission === 'granted') {
+            new Notification('永恒森林 服务器状态变化', {
+              body: nowOnline
+                ? '服务器已上线！快来玩吧！ (在线 ' + (data.players ? data.players.online : 0) + ' 人)'
+                : '服务器已离线，请稍后再试',
+              icon: 'assets/images/favicon.png',
+            });
+          }
+          prevServerOnline = nowOnline;
+        } else {
+          prevServerOnline = !!data.online;
+        }
+
+        if (data.online) {
+          const motd = data.motd ? (data.motd.clean || data.motd.raw || []).join('\n') : '';
+          const playerList = data.players && data.players.list
+            ? data.players.list.map(p => (typeof p === 'string' ? p : p.name))
+            : [];
+          renderStatusCard({
+            online: true,
+            name: data.hostname || host,
+            motd: motd,
+            players: data.players ? data.players.online : 0,
+            maxPlayers: data.players ? data.players.max : 0,
+            version: data.version || '--',
+            icon: data.icon ? 'data:image/png;base64,' + data.icon : null,
+            playerList: playerList,
+          });
+        } else {
+          renderStatusCard({ online: false, name: host });
+        }
+      } catch (err) {
+        console.warn('[ServerStatus] 查询失败:', err);
+        renderStatusCard({ online: false, name: cfg.javaHost });
+      }
+    }
+
+    queryServer();
+    // 定时刷新
+    const interval = Math.max(30, cfg.refreshInterval || 60);
+    setInterval(queryServer, interval * 1000);
+  }
+
+  // =========================================================
+  // 🔢 数字滚动动画
+  // =========================================================
+  function initCountUp() {
+    const statValues = document.querySelectorAll('.stat-value');
+    if (!statValues.length) return;
+
+    function animateCount(el, target, duration) {
+      const isFloat = String(target).includes('.');
+      const isPercent = String(target).includes('%');
+      const num = parseFloat(String(target).replace(/[^0-9.]/g, ''));
+      if (isNaN(num)) { el.textContent = target; return; }
+
+      let start = 0;
+      const startTime = performance.now();
+
+      function update(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // easeOutExpo
+        const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+        const current = Math.floor(num * eased);
+        let display = current.toLocaleString();
+        if (isFloat) display = current.toFixed(1);
+        if (isPercent) display += '%';
+        el.textContent = display;
+        if (progress < 1) requestAnimationFrame(update);
+        else el.textContent = target; // 最终精确值
+      }
+      requestAnimationFrame(update);
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target;
+          const target = el.textContent;
+          if (target && target !== '0') {
+            animateCount(el, target, 1500);
+          }
+          observer.unobserve(el);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    statValues.forEach(el => observer.observe(el));
+  }
+
+  // =========================================================
+  // 🖼️ 图片灯箱 (Lightbox)
+  // =========================================================
+  function initLightbox() {
+    const overlay = document.getElementById('lightboxOverlay');
+    const img = document.getElementById('lightboxImage');
+    const caption = document.getElementById('lightboxCaption');
+    const closeBtn = document.getElementById('lightboxClose');
+    const prevBtn = document.getElementById('lightboxPrev');
+    const nextBtn = document.getElementById('lightboxNext');
+    if (!overlay || !img) return;
+
+    let currentIdx = 0;
+    let galleryImages = [];
+
+    // 收集图库图片
+    function collectImages() {
+      galleryImages = [];
+      document.querySelectorAll('.gallery-item img').forEach(galleryImg => {
+        const src = galleryImg.getAttribute('src');
+        const label = galleryImg.parentElement.querySelector('.gallery-label');
+        galleryImages.push({
+          src: src,
+          caption: label ? label.textContent : '',
+        });
+      });
+    }
+
+    function openLightbox(idx) {
+      collectImages();
+      if (galleryImages.length === 0) return;
+      currentIdx = Math.max(0, Math.min(idx, galleryImages.length - 1));
+      showImage();
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function showImage() {
+      const item = galleryImages[currentIdx];
+      img.src = item.src;
+      caption.textContent = item.caption || '';
+    }
+
+    function closeLightbox() {
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function nextImage() {
+      currentIdx = (currentIdx + 1) % galleryImages.length;
+      showImage();
+    }
+
+    function prevImage() {
+      currentIdx = (currentIdx - 1 + galleryImages.length) % galleryImages.length;
+      showImage();
+    }
+
+    // 绑定图库点击
+    document.addEventListener('click', (e) => {
+      const galleryImg = e.target.closest('.gallery-item img');
+      if (galleryImg) {
+        const items = Array.from(document.querySelectorAll('.gallery-item img'));
+        const idx = items.indexOf(galleryImg);
+        if (idx >= 0) openLightbox(idx);
+      }
+    });
+
+    closeBtn?.addEventListener('click', closeLightbox);
+    overlay?.addEventListener('click', (e) => {
+      if (e.target === overlay) closeLightbox();
+    });
+    nextBtn?.addEventListener('click', (e) => { e.stopPropagation(); nextImage(); });
+    prevBtn?.addEventListener('click', (e) => { e.stopPropagation(); prevImage(); });
+
+    // 键盘控制
+    document.addEventListener('keydown', (e) => {
+      if (!overlay.classList.contains('active')) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') nextImage();
+      if (e.key === 'ArrowLeft') prevImage();
+    });
+  }
+
+  // =========================================================
+  // 👀 访问计数器
+  // =========================================================
+  function initVisitCounter() {
+    const el = document.getElementById('visitCount');
+    if (!el) return;
+    let visits = parseInt(localStorage.getItem('mc_visits') || '0') + 1;
+    localStorage.setItem('mc_visits', String(visits));
+    // 数字滚动动画
+    const duration = 1500;
+    const startTime = performance.now();
+    function animate(now) {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      const current = Math.floor(visits * eased);
+      el.textContent = current.toLocaleString();
+      if (progress < 1) requestAnimationFrame(animate);
+      else el.textContent = visits.toLocaleString();
+    }
+    requestAnimationFrame(animate);
+  }
+
+  // =========================================================
+  // 🎮 Konami Code 彩蛋（Matrix 雨效果）
+  // =========================================================
+  function initKonamiCode() {
+    const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+    let konamiIdx = 0;
+    const canvas = document.getElementById('konamiCanvas');
+    const hint = document.getElementById('konamiHint');
+    if (!canvas) return;
+    let matrixActive = false;
+    let matrixAnimId = null;
+
+    document.addEventListener('keydown', (e) => {
+      // 忽略在 input/textarea 中的按键
+      const tag = (e.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
+
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (key === KONAMI[konamiIdx]) {
+        konamiIdx++;
+        if (konamiIdx === KONAMI.length) {
+          konamiIdx = 0;
+          triggerMatrix();
+        }
+      } else {
+        konamiIdx = (key === KONAMI[0]) ? 1 : 0;
+      }
+    });
+
+    function triggerMatrix() {
+      if (matrixActive) {
+        // 关闭
+        stopMatrix();
+        return;
+      }
+      matrixActive = true;
+      canvas.classList.add('active');
+      hint.classList.add('active');
+      setTimeout(() => hint.classList.remove('active'), 3000);
+
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const fontSize = 16;
+      const cols = Math.floor(canvas.width / fontSize);
+      const drops = new Array(cols).fill(1);
+      const chars = 'MCRAFTVERSE0123456789@#$%&*+='.split('');
+
+      function draw() {
+        ctx.fillStyle = 'rgba(10, 14, 26, 0.06)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#44B37A';
+        ctx.font = fontSize + 'px monospace';
+        for (let i = 0; i < cols; i++) {
+          const ch = chars[Math.floor(Math.random() * chars.length)];
+          ctx.fillText(ch, i * fontSize, drops[i] * fontSize);
+          if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+            drops[i] = 0;
+          }
+          drops[i]++;
+        }
+        matrixAnimId = requestAnimationFrame(draw);
+      }
+      draw();
+
+      // 点击关闭
+      const closeHandler = (e) => {
+        if (matrixActive && e.key === 'Escape') {
+          stopMatrix();
+          document.removeEventListener('keydown', closeHandler);
+        }
+      };
+      document.addEventListener('keydown', closeHandler);
+      canvas.addEventListener('click', stopMatrix, { once: true });
+    }
+
+    function stopMatrix() {
+      matrixActive = false;
+      canvas.classList.remove('active');
+      hint.classList.remove('active');
+      if (matrixAnimId) cancelAnimationFrame(matrixAnimId);
+    }
+
+    window.addEventListener('resize', () => {
+      if (matrixActive) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+    });
+  }
+
+  // =========================================================
+  // 🔍 页内搜索
+  // =========================================================
+  function initPageSearch() {
+    const input = document.getElementById('pageSearchInput');
+    const results = document.getElementById('searchResults');
+    if (!input || !results) return;
+
+    // 收集可搜索的板块内容
+    const searchIndex = [
+      { id: 'hero', label: '首页', title: '永恒森林 MC 服务器', desc: '粘液科技 自动化 能源核心 pm.rainplay.cn' },
+      { id: 'modes', label: '游戏模式', title: '探索永恒森林', desc: '工业科技 纯净生存 Slimefun' },
+      { id: 'features', label: '游戏特色', title: '为什么选择永恒森林', desc: '粘液科技 自动化 能源核心 传送带 电力 经济 领地' },
+      { id: 'announcements', label: '公告', title: '最新公告', desc: '1.21.1升级 能源核心 自动化上线' },
+      { id: 'stats', label: '数据', title: '服务器运行状态', desc: '注册玩家 在线人数 在线率 运行天数' },
+      { id: 'gallery', label: '图库', title: '玩家作品展示', desc: '主城 建筑 活动 团队' },
+      { id: 'timeline', label: '历程', title: '永恒森林 的成长故事', desc: '开服 粘液科技 传送带 能源 1.21.1' },
+      { id: 'vote', label: '投票', title: '为我们投票', desc: 'MCBBS PlanetMC MinecraftServers' },
+      { id: 'faq', label: 'FAQ', title: '常见问题', desc: '版本 加入方法 付费 违规' },
+      { id: 'changelog', label: '日志', title: '版本更新记录', desc: '1.21.1 1.21 1.20 1.0 更新日志' },
+      { id: 'comments', label: '留言', title: '社区交流', desc: '玩家留言评论' },
+      { id: 'rules', label: '规则', title: '服务器规范', desc: '作弊 破坏 广告 封禁名单' },
+      { id: 'team', label: '团队', title: '管理团队', desc: 'CraftMaster BuildWizard TechNinja GameGuard' },
+    ];
+
+    function highlight(text, query) {
+      if (!query) return text;
+      const idx = text.toLowerCase().indexOf(query.toLowerCase());
+      if (idx < 0) return text;
+      return text.substring(0, idx) +
+        '<span class="search-result-highlight">' + text.substring(idx, idx + query.length) + '</span>' +
+        text.substring(idx + query.length);
+    }
+
+    function search(query) {
+      query = query.trim();
+      if (!query) { results.classList.remove('active'); return; }
+      const q = query.toLowerCase();
+      const matches = searchIndex.filter(item =>
+        item.title.toLowerCase().includes(q) ||
+        item.desc.toLowerCase().includes(q) ||
+        item.label.toLowerCase().includes(q)
+      ).slice(0, 8);
+
+      if (matches.length === 0) {
+        results.innerHTML = '<div class="search-no-results">没有找到「' + query + '」相关内容</div>';
+      } else {
+        results.innerHTML = matches.map(m =>
+          '<div class="search-result-item" data-target="' + m.id + '">' +
+            '<div class="search-result-label">' + m.label + '</div>' +
+            '<div class="search-result-title">' + highlight(m.title, query) + '</div>' +
+            '<div class="search-result-desc">' + highlight(m.desc, query) + '</div>' +
+          '</div>'
+        ).join('');
+      }
+      results.classList.add('active');
+
+      // 绑定点击跳转
+      results.querySelectorAll('.search-result-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const target = document.getElementById(item.dataset.target);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // 短暂高亮
+            target.style.transition = 'box-shadow 0.5s';
+            target.style.boxShadow = '0 0 30px rgba(68, 179, 122, 0.4)';
+            setTimeout(() => { target.style.boxShadow = ''; }, 1500);
+          }
+          results.classList.remove('active');
+          input.value = '';
+        });
+      });
+    }
+
+    let searchTimer;
+    input.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => search(input.value), 200);
+    });
+
+    input.addEventListener('focus', () => {
+      if (input.value.trim()) search(input.value);
+    });
+
+    // 点击外部关闭
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.search-wrapper')) {
+        results.classList.remove('active');
+      }
+    });
+
+    // ESC 关闭
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        results.classList.remove('active');
+        input.blur();
+      }
+    });
+  }
+
+  // =========================================================
+  // 🔔 桌面通知
+  // =========================================================
+  function initNotifyBell() {
+    const bell = document.getElementById('notifyBell');
+    if (!bell) return;
+
+    // 检查之前是否已授权
+    if (Notification.permission === 'granted') {
+      bell.classList.add('active');
+      bell.title = '桌面通知已开启';
+    } else if (Notification.permission === 'denied') {
+      bell.title = '桌面通知已被浏览器拒绝';
+    }
+
+    bell.addEventListener('click', async () => {
+      if (!('Notification' in window)) {
+        showToast('你的浏览器不支持桌面通知', 'error');
+        return;
+      }
+      if (Notification.permission === 'granted') {
+        bell.classList.toggle('active');
+        if (bell.classList.contains('active')) {
+          new Notification('永恒森林 服务器', {
+            body: '桌面通知已开启！服务器状态变化时将通知你。',
+            icon: 'assets/images/favicon.png',
+          });
+          showToast('桌面通知已开启', 'success');
+        } else {
+          showToast('桌面通知已关闭', 'info');
+        }
+      } else if (Notification.permission !== 'denied') {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          bell.classList.add('active');
+          new Notification('永恒森林 服务器', {
+            body: '欢迎！你将收到服务器上线/离线等通知。',
+            icon: 'assets/images/favicon.png',
+          });
+          showToast('桌面通知已开启！', 'success');
+        } else {
+          showToast('通知权限被拒绝', 'error');
+        }
+      } else {
+        showToast('请在浏览器设置中手动开启通知权限', 'info');
+      }
+    });
+  }
+
+  // =========================================================
+  // 🤖 假人/Bot 压测控制台
+  // 仅登录用户可见，且只能管理/查看自己的假人
+  // =========================================================
+  function initBotPanel() {
+    const cfg = CONFIG.botServer;
+    if (!cfg || !cfg.enabled) return;
+
+    const panel = document.getElementById('botPanelContent');
+    const loginRequired = document.getElementById('botLoginRequired');
+    if (!panel || !loginRequired) return;
+
+    const badge = document.getElementById('botServerBadge');
+    const statusText = document.getElementById('botServerStatusText');
+    const serverInfo = document.getElementById('botServerInfo');
+    const startBtn = document.getElementById('botStartBtn');
+    const stopAllBtn = document.getElementById('botStopAllBtn');
+    const refreshBtn = document.getElementById('botRefreshBtn');
+    const table = document.getElementById('botTable');
+    const tbody = document.getElementById('botTableBody');
+    const listEmpty = document.getElementById('botListEmpty');
+    const listCount = document.getElementById('botListCount');
+
+    let ownerUser = null;
+    let selectedCount = 10;
+    let refreshTimer = null;
+
+    function getCurrentUser() {
+      try {
+        return JSON.parse(localStorage.getItem('mc_current_user') || 'null');
+      } catch (e) { return null; }
+    }
+
+    // ---- 数量选择器 ----
+    function setupCountSelector() {
+      const btns = document.querySelectorAll('.bot-count-btn');
+      btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          btns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedCount = parseInt(btn.dataset.count) || 1;
+        });
+      });
+      const active = document.querySelector('.bot-count-btn.active');
+      if (active) selectedCount = parseInt(active.dataset.count) || 1;
+    }
+    setupCountSelector();
+
+    // ---- 工具函数 ----
+    function escapeHtml(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+    function formatUptime(sec) {
+      if (sec == null) return '--';
+      const m = Math.floor(sec / 60), s = sec % 60;
+      return m > 0 ? (m + '分' + s + '秒') : (s + '秒');
+    }
+    function statusLabel(s) {
+      const map = {
+        connecting: '连接中', online: '已连接', active: '运行中',
+        offline: '已离线', kicked: '被踢出', error: '错误',
+      };
+      return map[s] || s;
+    }
+
+    // ---- API 封装 ----
+    async function api(path, options) {
+      options = options || {};
+      const headers = Object.assign({ 'x-bot-password': cfg.password }, options.headers || {});
+      const res = await fetch(cfg.url + path, Object.assign({}, options, { headers }));
+      if (!res.ok) {
+        let msg = '请求失败 (' + res.status + ')';
+        try { const j = await res.json(); if (j && j.error) msg = j.error; } catch (e) {}
+        throw new Error(msg);
+      }
+      return res.json();
+    }
+
+    // ---- 健康检查 ----
+    async function checkHealth() {
+      try {
+        const res = await fetch(cfg.url + '/api/health');
+        const data = await res.json();
+        if (badge) { badge.className = 'bot-server-badge online'; }
+        if (statusText) statusText.textContent = '已连接';
+        if (serverInfo) serverInfo.textContent = '目标: ' + data.mcServer + ' · 在线假人: ' + data.activeBots;
+      } catch (e) {
+        if (badge) { badge.className = 'bot-server-badge offline'; }
+        if (statusText) statusText.textContent = '未连接';
+        if (serverInfo) serverInfo.textContent = '请先启动后端: node bot-server/bot-server.js';
+      }
+    }
+
+    // ---- 渲染假人列表 ----
+    function renderBots(list) {
+      list = list || [];
+      if (listCount) listCount.textContent = list.length;
+      if (!list.length) {
+        if (table) table.style.display = 'none';
+        if (listEmpty) listEmpty.style.display = 'block';
+        return;
+      }
+      if (listEmpty) listEmpty.style.display = 'none';
+      if (table) table.style.display = 'table';
+      if (tbody) {
+        tbody.innerHTML = list.map(b =>
+          '<tr>' +
+            '<td class="bot-cell-name">' + escapeHtml(b.username) + '</td>' +
+            '<td><span class="bot-status-badge ' + b.status + '">' + statusLabel(b.status) + '</span></td>' +
+            '<td class="bot-cell-action">' + escapeHtml(b.lastAction || '--') + '</td>' +
+            '<td>' + (b.regDone ? '✅' : '⏳') + '</td>' +
+            '<td>' + (b.loginDone ? '✅' : '⏳') + '</td>' +
+            '<td>' + formatUptime(b.uptime) + '</td>' +
+            '<td><button class="bot-stop-btn" data-id="' + b.id + '">停止</button></td>' +
+          '</tr>'
+        ).join('');
+        tbody.querySelectorAll('.bot-stop-btn').forEach(btn => {
+          btn.addEventListener('click', () => stopBot(btn.dataset.id));
+        });
+      }
+    }
+
+    // ---- 拉取状态 ----
+    async function refreshStatus() {
+      if (!ownerUser) return;
+      try {
+        const data = await api('/api/bots/status?username=' + encodeURIComponent(ownerUser));
+        renderBots(data.bots || []);
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message || '刷新失败', 'error');
+      }
+    }
+
+    // ---- 启动假人 ----
+    async function startBots() {
+      if (!ownerUser) return;
+      if (startBtn) startBtn.disabled = true;
+      try {
+        const data = await api('/api/bots/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: ownerUser, count: selectedCount }),
+        });
+        if (window.showToast) window.showToast(data.message || '已启动假人', 'success');
+        refreshStatus();
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message || '启动失败', 'error');
+      } finally {
+        if (startBtn) startBtn.disabled = false;
+      }
+    }
+
+    // ---- 停止全部 ----
+    async function stopAll() {
+      if (!ownerUser) return;
+      try {
+        await api('/api/bots/stop', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: ownerUser, botId: 'all' }),
+        });
+        if (window.showToast) window.showToast('已停止全部假人', 'success');
+        refreshStatus();
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message || '停止失败', 'error');
+      }
+    }
+
+    // ---- 停止单个 ----
+    async function stopBot(id) {
+      if (!ownerUser) return;
+      try {
+        await api('/api/bots/stop', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: ownerUser, botId: id }),
+        });
+        renderBots([]);
+        refreshStatus();
+      } catch (e) {
+        if (window.showToast) window.showToast(e.message || '停止失败', 'error');
+      }
+    }
+
+    // ---- 登录态切换 ----
+    function applyLoginState() {
+      const user = getCurrentUser();
+      if (!user) {
+        ownerUser = null;
+        loginRequired.style.display = 'flex';
+        panel.style.display = 'none';
+        if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+        return;
+      }
+      ownerUser = user.id || user.username || user.email || 'unknown';
+      loginRequired.style.display = 'none';
+      panel.style.display = 'block';
+      checkHealth();
+      refreshStatus();
+      if (!refreshTimer) {
+        refreshTimer = setInterval(() => { if (ownerUser) refreshStatus(); }, cfg.autoRefresh || 5000);
+      }
+    }
+
+    // ---- 事件绑定 ----
+    if (startBtn) startBtn.addEventListener('click', startBots);
+    if (stopAllBtn) stopAllBtn.addEventListener('click', stopAll);
+    if (refreshBtn) refreshBtn.addEventListener('click', refreshStatus);
+    window.addEventListener('mc-user-changed', applyLoginState);
+
+    applyLoginState();
   }
 
   // =========================================================
@@ -827,6 +2124,20 @@ document.addEventListener('DOMContentLoaded', () => {
     initFAQ();
     initModeTabs();
     initNavHighlight();
+    // 第一轮新增功能
+    initReadProgress();
+    initTypewriter();
+    initCountdowns();
+    initCountUp();
+    initLightbox();
+    initServerStatus();
+    // 第二轮新增功能
+    initCaptcha();
+    initVisitCounter();
+    initKonamiCode();
+    initPageSearch();
+    initNotifyBell();
+    initBotPanel();
   }, 100);
 });
 
